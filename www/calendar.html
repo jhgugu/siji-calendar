@@ -1,0 +1,4201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>📅 四季日历 · 黄历卜卦</title>
+    <!-- PWA 支持 -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#8b5e3c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="四季日历">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23f5f0e8'/><text x='50' y='60' text-anchor='middle' font-size='50'>📅</text></svg>">
+    <style>
+        /* ============================================================
+           基础重置 & 页面框架
+           ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+
+            /* 背景由 JS 动态切换，这里给一个默认的过渡动画 */
+            background: linear-gradient(135deg, #87CEEB 0%, #E0F0FF 50%, #FFF8DC 100%);
+            transition: background 1.2s ease;
+            /* 给 body 加一层纹理叠加，让背景更有质感 */
+            position: relative;
+        }
+
+        /* ============================================================
+           背景装饰层：模拟天空中的云、雪等
+           ============================================================ */
+        .sky-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            transition: opacity 1s ease;
+        }
+
+        /* ============================================================
+           日历主体卡片（半透明，让背景透过来）
+           ============================================================ */
+        .calendar-wrapper {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            /* 毛玻璃效果 */;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            transition: background 0.8s ease, box-shadow 0.8s ease;
+        }
+
+        /* ============================================================
+           四季横幅：显示季节图标 + 气候描述
+           ============================================================ */
+        .season-banner {
+            text-align: center;
+            padding: 18px 20px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            transition: all 0.8s ease;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .season-banner .season-icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 4px;
+            /* 让图标微微浮动 */
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+
+        .season-banner .season-name {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .season-banner .climate-desc {
+            font-size: 13px;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        .season-banner .month-subtitle {
+            font-size: 12px;
+            margin-top: 2px;
+            opacity: 0.75;
+        }
+
+        /* ============================================================
+           头部：标题 + 导航按钮
+           ============================================================ */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h2 {
+            font-size: 22px;
+            color: #333;
+            user-select: none;
+            transition: color 0.6s;
+        }
+
+        /* 导航按钮 */
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            color: #5b6abf;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: #5b6abf;
+            color: white;
+            border-color: #5b6abf;
+        }
+
+        /* "回到今天"按钮 */
+        .today-btn {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .today-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ============================================================
+           星期标题行
+           ============================================================ */
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .weekdays .weekend {
+            color: #e07b7b;
+        }
+
+        /* ============================================================
+           日期网格
+           ============================================================ */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s;
+            font-size: 15px;
+            color: #333;
+            min-height: 50px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .day-cell:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 非本月日期 */
+        .day-cell.other-month {
+            color: #ccc;
+            cursor: default;
+            background: transparent;
+        }
+
+        .day-cell.other-month:hover {
+            background: transparent;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 今日高亮 */
+        .day-cell.today {
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 选中日期 */
+        .day-cell.selected {
+            border: 2px solid;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 事件小圆点 */
+        .day-cell .event-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            margin-top: 2px;
+        }
+
+        .day-cell.today .event-dot {
+            background: #fff;
+        }
+
+        /* 节日标签 */
+        .day-cell .holiday-label {
+            font-size: 9px;
+            color: #e07b7b;
+            white-space: nowrap;
+            margin-top: 1px;
+            line-height: 1;
+        }
+
+        .day-cell.today .holiday-label {
+            color: #ffeaa7;
+        }
+
+        /* ========== 农历日期文字 ========== */
+        .day-cell .lunar-date {
+            font-size: 10px;
+            color: #999;
+            line-height: 1.1;
+            margin-top: -1px;
+            transition: color 0.3s;
+        }
+
+        .day-cell.today .lunar-date {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* 农历初一显示月份名（如"正月"），颜色更突出 */
+        .day-cell .lunar-date.lunar-first-day {
+            color: #e07b7b;
+            font-weight: 600;
+            font-size: 10.5px;
+        }
+
+        .day-cell.today .lunar-date.lunar-first-day {
+            color: #ffeaa7;
+        }
+
+        /* 农历闰月标记 */
+        .day-cell .lunar-date.lunar-leap {
+            color: #e67e22;
+        }
+
+        .day-cell.today .lunar-date.lunar-leap {
+            color: #ffd700;
+        }
+
+        /* 天气图标 */
+        .day-cell .weather-icon {
+            font-size: 11px;
+            line-height: 1;
+            margin-top: 1px;
+        }
+
+        /* ============================================================
+           事件面板
+           ============================================================ */
+        .event-panel {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .event-panel h3 {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .event-panel .selected-date-label {
+            font-weight: bold;
+        }
+
+        .event-input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .event-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .event-input-row input:focus {
+            border-color: #5b6abf;
+        }
+
+        .add-btn {
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .add-btn:hover {
+            opacity: 0.85;
+        }
+
+        .event-list {
+            list-style: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .event-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #444;
+        }
+
+        .delete-event-btn {
+            background: none;
+            border: none;
+            color: #bbb;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .delete-event-btn:hover {
+            color: #e07b7b;
+            background: rgba(255, 0, 0, 0.05);
+        }
+
+        /* ============================================================
+           天气粒子效果层
+           ============================================================ */
+        .weather-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        /* 雪花 */
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 16px;
+            animation: snowfall linear infinite;
+            opacity: 0.8;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(105vh) rotate(360deg);
+                opacity: 0.2;
+            }
+        }
+
+        /* 雨滴 */
+        .raindrop {
+            position: absolute;
+            top: -20px;
+            width: 2px;
+            height: 15px;
+            background: linear-gradient(transparent, rgba(255, 255, 255, 0.7));
+            animation: rainfall linear infinite;
+            border-radius: 1px;
+        }
+
+        @keyframes rainfall {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(105vh);
+                opacity: 0.1;
+            }
+        }
+
+        /* 落叶 */
+        .leaf {
+            position: absolute;
+            top: -20px;
+            font-size: 18px;
+            animation: leafFalling linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes leafFalling {
+            0% {
+                transform: translateY(-20px) translateX(0) rotate(0deg);
+                opacity: 0.9;
+            }
+            25% {
+                transform: translateY(25vh) translateX(30px) rotate(90deg);
+            }
+            50% {
+                transform: translateY(50vh) translateX(-20px) rotate(180deg);
+                opacity: 0.7;
+            }
+            75% {
+                transform: translateY(75vh) translateX(15px) rotate(270deg);
+            }
+            100% {
+                transform: translateY(105vh) translateX(-10px) rotate(360deg);
+                opacity: 0.2;
+            }
+        }
+
+        /* 花瓣 */
+        .petal {
+            position: absolute;
+            top: -20px;
+            font-size: 14px;
+            animation: petalDrift linear infinite;
+            opacity: 0.85;
+        }
+
+        @keyframes petalDrift {
+            0% {
+                transform: translateY(-20px) translateX(0) rotate(0deg);
+                opacity: 0.9;
+            }
+            50% {
+                transform: translateY(50vh) translateX(60px) rotate(180deg);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(105vh) translateX(-20px) rotate(360deg);
+                opacity: 0.15;
+            }
+        }
+
+        /* ============================================================
+           黄历悬浮面板
+           ============================================================ */
+        .huangli-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: overlayFadeIn 0.3s ease;
+        }
+
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .huangli-popup {
+            background: #fffef9;
+            /* 仿古纸色 */
+            border-radius: 16px;
+            padding: 0;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: popupSpring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        @keyframes popupSpring {
+            from {
+                transform: scale(0.7) translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* ---- 弹窗顶部：日期标题 ---- */
+        .huangli-popup .hl-header {
+            padding: 20px 24px 14px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .huangli-popup .hl-solar-date {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        .huangli-popup .hl-lunar-date {
+            font-size: 18px;
+            color: #c0392b;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .huangli-popup .hl-ganzhi {
+            font-size: 13px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* ---- 弹窗中部：黄历内容 ---- */
+        .huangli-popup .hl-body {
+            padding: 10px 24px 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .huangli-popup .hl-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .huangli-popup .hl-label {
+            color: #999;
+            white-space: nowrap;
+            min-width: 28px;
+            font-weight: 600;
+        }
+
+        .huangli-popup .hl-value {
+            color: #444;
+            line-height: 1.5;
+        }
+
+        .huangli-popup .hl-value.yi {
+            color: #27ae60;
+        }
+
+        .huangli-popup .hl-value.ji {
+            color: #c0392b;
+        }
+
+        .huangli-popup .hl-divider {
+            border: none;
+            border-top: 1px dashed #e0d8c8;
+            margin: 8px 0;
+        }
+
+        /* ---- 底部关闭按钮 ---- */
+        .huangli-popup .hl-footer {
+            padding: 0 24px 18px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .huangli-popup .hl-close-btn {
+            background: #8b7355;
+            color: #fff;
+            border: none;
+            padding: 8px 30px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .huangli-popup .hl-close-btn:hover {
+            background: #6b5640;
+            transform: translateY(-1px);
+        }
+
+        /* ---- 弹窗内侧边装饰 ---- */
+        .huangli-popup::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            border: 1px solid rgba(139, 115, 85, 0.2);
+            border-radius: 12px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ============================================================
+           节日主题背景（弹窗内层动画区域）
+           ============================================================ */
+        .huangli-popup .hl-theme-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: background 0.5s;
+        }
+
+        /* 春节 — 红色喜庆 + 烟花粒子 */
+        .hl-theme-spring {
+            background: linear-gradient(180deg, #c0392b 0%, #e74c3c 30%, #f9d423 100%);
+        }
+
+        /* 元宵 — 暖橙 + 灯笼光 */
+        .hl-theme-yuanxiao {
+            background: linear-gradient(180deg, #d35400 0%, #f39c12 30%, #fdebd0 100%);
+        }
+
+        /* 七夕 — 星空蓝紫 */
+        .hl-theme-qixi {
+            background: linear-gradient(180deg, #1a1a4e 0%, #2c3e8e 40%, #6b7fd4 100%);
+        }
+
+        /* 中秋 — 深蓝夜空 */
+        .hl-theme-midautumn {
+            background: linear-gradient(180deg, #0d1b3e 0%, #1a3a6e 40%, #4a7ab5 100%);
+        }
+
+        /* 端午 — 绿水碧波 */
+        .hl-theme-dragonboat {
+            background: linear-gradient(180deg, #1a6b4a 0%, #27ae60 30%, #a8e6cf 100%);
+        }
+
+        /* 重阳 — 金秋 */
+        .hl-theme-chongyang {
+            background: linear-gradient(180deg, #8b4513 0%, #d4a017 30%, #f5e6c8 100%);
+        }
+
+        /* 清明 — 青绿 */
+        .hl-theme-qingming {
+            background: linear-gradient(180deg, #2d5a27 0%, #5a8f4a 30%, #d4e8c5 100%);
+        }
+
+        /* 默认 — 古纸色 */
+        .hl-theme-default {
+            background: linear-gradient(180deg, #f5f0e8 0%, #faf7f0 50%, #f5ecd7 100%);
+        }
+
+        /* ---- 节日主题内的浮动装饰物 ---- */
+        .hl-theme-bg .hl-particle {
+            position: absolute;
+            pointer-events: none;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+        }
+
+        /* 烟花粒子 */
+        .hl-firework {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            animation: fireworkBurst 1.5s ease-out infinite;
+        }
+
+        @keyframes fireworkBurst {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* 星星 */
+        .hl-star {
+            position: absolute;
+            color: #fff;
+            animation: starTwinkle 2s ease-in-out infinite;
+            font-size: 14px;
+        }
+
+        @keyframes starTwinkle {
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* 灯笼 */
+        .hl-lantern {
+            position: absolute;
+            font-size: 28px;
+            animation: lanternSwing 3s ease-in-out infinite;
+            transform-origin: top center;
+        }
+
+        @keyframes lanternSwing {
+            0%,
+            100% {
+                transform: rotate(-5deg);
+            }
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        /* 水波 */
+        .hl-water-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 40%;
+            animation: waterFlow 4s linear infinite;
+        }
+
+        @keyframes waterFlow {
+            0% {
+                transform: translateX(-50%);
+            }
+            100% {
+                transform: translateX(0%);
+            }
+        }
+
+        /* 月亮 */
+        .hl-moon {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fffde7, #ffd54f);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.2);
+            animation: moonGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes moonGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 45px rgba(255, 215, 0, 0.7), 0 0 90px rgba(255, 215, 0, 0.35);
+            }
+        }
+
+        /* 落叶(秋) */
+        .hl-autumn-leaf {
+            position: absolute;
+            animation: leafSpin 4s ease-in-out infinite;
+            font-size: 18px;
+        }
+
+        @keyframes leafSpin {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(80px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* 鞭炮 */
+        .hl-firecracker {
+            position: absolute;
+            font-size: 20px;
+            animation: crackerBounce 0.6s ease-in-out infinite;
+        }
+
+        @keyframes crackerBounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-15px);
+            }
+            50% {
+                transform: translateY(0);
+            }
+            70% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* 黄历弹窗内的 GIF 背景图 */
+        .hl-gif-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            border-radius: 16px;
+        }
+
+        /* GIF 上层叠加的粒子动画 */
+        @keyframes sparkPop {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes glowPulse {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+        }
+        @keyframes starTwinkleGif {
+            0%, 100% { opacity: 0.2; transform: scale(0.7); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+        @keyframes floatUp {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+            50% { transform: translateY(-20px) scale(1.3); opacity: 0.9; }
+        }
+        @keyframes rippleWide {
+            0% { transform: scaleX(0.2); opacity: 0.6; }
+            100% { transform: scaleX(1.5); opacity: 0; }
+        }
+        @keyframes rainDrop {
+            0% { transform: translateY(0); opacity: 0.6; }
+            100% { transform: translateY(120px); opacity: 0; }
+        }
+        /* 烟花粒子爆裂 */
+        @keyframes burstParticle {
+            0% { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--bx), var(--by)) scale(0); opacity: 0; }
+        }
+        /* 灯笼上浮 */
+        @keyframes lanternRise {
+            0% { transform: translateY(0) rotate(-2deg); opacity: 1; }
+            50% { transform: translateY(-30px) rotate(2deg); opacity: 0.9; }
+            100% { transform: translateY(-60px) rotate(-2deg); opacity: 0; }
+        }
+        /* 流星 */
+        @keyframes shootingStar {
+            0% { transform: translate(0,0); opacity: 0; }
+            10% { opacity: 1; }
+            30% { opacity: 0; }
+            100% { transform: translate(-200px, 150px); opacity: 0; }
+        }
+        /* 云飘 */
+        @keyframes cloudFloat {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100px); }
+        }
+        /* 落叶摇摆 */
+        @keyframes leafDrift {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.8; }
+            25% { transform: translateY(20px) translateX(15px) rotate(100deg); }
+            50% { transform: translateY(40px) translateX(-10px) rotate(200deg); opacity: 0.6; }
+            75% { transform: translateY(60px) translateX(20px) rotate(300deg); }
+            100% { transform: translateY(80px) translateX(-15px) rotate(400deg); opacity: 0; }
+        }
+        /* 水波流动 */
+        @keyframes waveShift {
+            0% { background-position: 0 0; }
+            100% { background-position: 200px 0; }
+        }
+        /* 雨丝下落 */
+        @keyframes rainFall {
+            0% { transform: translateY(-10px); opacity: 0.4; }
+            100% { transform: translateY(110px); opacity: 0; }
+        }
+
+        /* ============================================================
+           六爻卜卦弹窗
+           ============================================================ */
+        .divination-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: overlayFadeIn 0.3s ease;
+        }
+
+        .divination-panel {
+            background: linear-gradient(180deg, #fdf8f0 0%, #f8f0e0 50%, #f0e8d0 100%);
+            border-radius: 16px;
+            padding: 28px 24px 22px;
+            max-width: 440px;
+            width: 92%;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            position: relative;
+            animation: popupSpring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid #d4c5a0;
+        }
+
+        .divination-panel h3 {
+            font-size: 20px;
+            color: #5a3e2b;
+            margin-bottom: 6px;
+            letter-spacing: 2px;
+        }
+
+        .divination-panel .div-subtitle {
+            font-size: 12px;
+            color: #9a8b7a;
+            margin-bottom: 16px;
+        }
+
+        /* 六条爻线区域 */
+        .yao-lines-area {
+            margin: 0 auto 14px;
+            width: 180px;
+        }
+
+        .yao-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 30px;
+            margin: 4px 0;
+            position: relative;
+            cursor: default;
+            transition: all 0.3s;
+        }
+
+        /* 等待点击的虚线框 */
+        .yao-line.pending {
+            border: 2px dashed #c8b898;
+            border-radius: 6px;
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        /* 阳爻 — 长实线 */
+        .yao-line .yang-line {
+            width: 120px;
+            height: 8px;
+            background: #3a2a1a;
+            border-radius: 4px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        /* 阴爻 — 两段短线 */
+        .yao-line .yin-line {
+            display: inline-flex;
+            gap: 20px;
+        }
+        .yao-line .yin-line span {
+            width: 48px;
+            height: 8px;
+            background: #3a2a1a;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        /* 变爻标记 */
+        .yao-line .change-mark {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            width: 14px;
+            text-align: center;
+        }
+        .yao-line .change-mark.old-yang {
+            color: #c0392b;
+        }
+        .yao-line .change-mark.old-yin {
+            color: #c0392b;
+        }
+
+        /* 爻值标签 */
+        .yao-line .yao-val-label {
+            position: absolute;
+            right: -30px;
+            font-size: 10px;
+            color: #8a7a6a;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 点击计数提示 */
+        .div-click-hint {
+            font-size: 14px;
+            color: #7a5a3a;
+            margin: 8px 0 12px;
+            font-weight: 600;
+        }
+
+        .div-click-hint .click-count {
+            font-size: 22px;
+            color: #c0392b;
+        }
+
+        /* 卦象结果区 */
+        .hexagram-result {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .hexagram-result .hex-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #3a1a0a;
+            letter-spacing: 2px;
+            margin: 6px 0;
+        }
+
+        .hexagram-result .hex-judgment {
+            font-size: 13px;
+            color: #6a5a4a;
+            margin: 4px 0 10px;
+            font-style: italic;
+        }
+
+        .hexagram-result .hex-detail {
+            font-size: 12px;
+            color: #5a4a3a;
+            text-align: left;
+            line-height: 1.7;
+            background: rgba(200, 180, 150, 0.15);
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        /* 卦桶容器 */
+        .div-bucket-area {
+            position: relative;
+            width: 80px;
+            height: 120px;
+            margin: 8px auto 14px;
+        }
+
+        /* 卦桶本体 - 立体圆筒 */
+        .div-bucket {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 94px;
+            /* 立体圆柱渐变：左侧高光 → 中间木色 → 右侧暗部 → 边缘反光 */
+            background:
+                /* 纵向木纹 */
+                repeating-linear-gradient(0deg,
+                    transparent 0px, transparent 4px,
+                    rgba(0, 0, 0, 0.04) 5px, transparent 6px),
+                /* 横向圆柱光照 */
+                linear-gradient(90deg,
+                    #3a2208 0%,        /* 左边缘暗 */
+                    #5a3815 4%,         /* 暗部 */
+                    #8b6930 12%,        /* 过渡 */
+                    #c4a050 24%,        /* 高光（光源在左） */
+                    #b89448 32%,        /* 亮部 */
+                    #9b7a3c 42%,        /* 本色 */
+                    #7a5a28 56%,        /* 暗部开始 */
+                    #5a3815 72%,        /* 更暗 */
+                    #3a2208 84%,        /* 深暗 */
+                    #4a3010 92%,        /* 边缘反光 */
+                    #2a1808 100%        /* 右边缘最暗 */
+                );
+            border-radius: 5px 5px 10px 10px;
+            border: 1.5px solid #3a2208;
+            /* 顶部开口阴影（空心感） */
+            box-shadow:
+                inset 0 4px 8px rgba(0, 0, 0, 0.5),
+                inset -4px 0 8px rgba(0, 0, 0, 0.15),
+                inset 4px 0 8px rgba(0, 0, 0, 0.1),
+                0 6px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* 桶身上铁箍 */
+        .div-bucket::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: -4px;
+            right: -4px;
+            height: 6px;
+            background: linear-gradient(180deg,
+                    #3a2810, #7a5a28 25%, #c4a050 55%, #7a5a28 75%, #3a2810);
+            border-radius: 2px;
+            box-shadow:
+                0 1px 0 rgba(255, 200, 100, 0.3),
+                0 2px 3px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        /* 桶身下铁箍 */
+        .div-bucket::after {
+            content: '';
+            position: absolute;
+            bottom: 22%;
+            left: -4px;
+            right: -4px;
+            height: 6px;
+            background: linear-gradient(180deg,
+                    #3a2810, #7a5a28 25%, #c4a050 55%, #7a5a28 75%, #3a2810);
+            border-radius: 2px;
+            box-shadow:
+                0 1px 0 rgba(255, 200, 100, 0.3),
+                0 2px 3px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        /* 桶口不用任何元素，筒身顶部就是开口 */
+
+
+        /* 卦桶内木签 */
+        .div-sticks {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 44px;
+            height: 64px;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            justify-content: center;
+            align-content: flex-start;
+            padding: 4px 2px;
+        }
+
+        .div-sticks .stick {
+            width: 7px;
+            height: 36px;
+            border-radius: 2px 2px 3px 3px;
+            background: linear-gradient(180deg,
+                #c0392b 0%, #c0392b 28%,
+                #d4b896 28%, #f0dcc8 35%, #e8d0b0 60%, #d4b896 100%);
+            border: 0.5px solid #b89870;
+            position: relative;
+            animation: stickJitter 0.3s ease-in-out infinite;
+        }
+
+
+        @keyframes stickJitter {
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+            25% {
+                transform: translate(1px, -1px);
+            }
+            50% {
+                transform: translate(-1px, 0);
+            }
+            75% {
+                transform: translate(1px, 1px);
+            }
+        }
+
+        /* 卦桶摇动动画 */
+        .div-bucket.shaking {
+            animation: bucketShake 0.8s ease-in-out;
+        }
+
+        @keyframes bucketShake {
+            0%,
+            100% {
+                transform: translateX(-50%) rotate(0deg);
+            }
+            5% {
+                transform: translateX(-48%) rotate(3deg);
+            }
+            10% {
+                transform: translateX(-52%) rotate(-3deg);
+            }
+            15% {
+                transform: translateX(-47%) rotate(4deg);
+            }
+            20% {
+                transform: translateX(-53%) rotate(-4deg);
+            }
+            25% {
+                transform: translateX(-49%) rotate(5deg);
+            }
+            30% {
+                transform: translateX(-51%) rotate(-5deg);
+            }
+            35% {
+                transform: translateX(-48%) rotate(6deg);
+            }
+            40% {
+                transform: translateX(-52%) rotate(-6deg);
+            }
+            45% {
+                transform: translateX(-50%) rotate(4deg);
+            }
+            50% {
+                transform: translateX(-48%) rotate(-3deg);
+            }
+            55% {
+                transform: translateX(-52%) rotate(2deg);
+            }
+            60% {
+                transform: translateX(-49%) rotate(-1.5deg);
+            }
+            65% {
+                transform: translateX(-51%) rotate(1deg);
+            }
+            70% {
+                transform: translateX(-50%) rotate(-0.5deg);
+            }
+            80% {
+                transform: translateX(-50%) rotate(0.3deg);
+            }
+            90% {
+                transform: translateX(-50%) rotate(-0.1deg);
+            }
+            100% {
+                transform: translateX(-50%) rotate(0deg);
+            }
+        }
+
+        /* 卦桶中飞出木签 */
+        .flying-stick {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            width: 7px;
+            height: 36px;
+            background: linear-gradient(180deg,
+                #c0392b 0%, #c0392b 28%,
+                #d4b896 28%, #f0dcc8 35%, #e8d0b0 60%, #d4b896 100%);
+            border-radius: 2px 2px 3px 3px;
+            border: 0.5px solid #b89870;
+            animation: stickFlyOut 0.8s ease-out forwards;
+        }
+
+
+        @keyframes stickFlyOut {
+            0% {
+                transform: translateY(0) scale(0.6) rotate(0deg);
+                opacity: 0;
+            }
+            15% {
+                transform: translateY(-30px) scale(1.2) rotate(180deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(-60px) scale(1.0) rotate(540deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-90px) scale(0.5) rotate(900deg);
+                opacity: 0;
+            }
+        }
+
+        /* 摇卦中禁止点击 */
+        .div-bucket-area.busy {
+            pointer-events: none;
+        }
+
+        .divination-panel .div-btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 14px;
+        }
+
+        .divination-panel .div-btn {
+            padding: 9px 22px;
+            border-radius: 20px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+
+        .div-btn.primary {
+            background: #8b5e3c;
+            color: #fff;
+        }
+        .div-btn.primary:hover {
+            background: #6b3e1c;
+        }
+        .div-btn.secondary {
+            background: #e8dcc8;
+            color: #5a3e2b;
+        }
+        .div-btn.secondary:hover {
+            background: #d4c5a0;
+        }
+
+        /* 响应式 */
+        @media (max-width: 500px) {
+            .divination-panel {
+                padding: 18px 14px 14px;
+            }
+            .yao-lines-area {
+                width: 140px;
+            }
+            .yao-line .yang-line {
+                width: 90px;
+                height: 6px;
+            }
+            .yao-line .yin-line span {
+                width: 36px;
+                height: 6px;
+            }
+            .yao-line .yin-line {
+                gap: 14px;
+            }
+        }
+
+        /* ============================================================
+           响应式
+           ============================================================ */
+        @media (max-width: 500px) {
+            .calendar-wrapper {
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            .calendar-header h2 {
+                font-size: 18px;
+            }
+
+            .day-cell {
+                font-size: 13px;
+                min-height: 40px;
+                border-radius: 8px;
+            }
+
+            .day-cell .lunar-date {
+                font-size: 8px;
+            }
+
+            .day-cell .lunar-date.lunar-first-day {
+                font-size: 8.5px;
+            }
+
+            .day-cell .weather-icon {
+                font-size: 9px;
+            }
+
+            .holiday-label {
+                font-size: 7px;
+            }
+
+            .season-banner .season-icon {
+                font-size: 36px;
+            }
+
+            .season-banner .season-name {
+                font-size: 17px;
+            }
+
+            .huangli-popup {
+                max-width: 95%;
+                width: 95%;
+            }
+
+            .huangli-popup .hl-solar-date {
+                font-size: 18px;
+            }
+
+            .huangli-popup .hl-lunar-date {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 天气粒子效果（雪花、雨滴、落叶等，由 JS 动态创建） -->
+    <div class="weather-particles" id="weatherParticles"></div>
+
+    <!-- ==================== 日历主体 ==================== -->
+    <div class="calendar-wrapper" id="calendarWrapper">
+
+        <!-- 四季横幅 -->
+        <div class="season-banner" id="seasonBanner">
+            <span class="season-icon" id="seasonIcon">☀️</span>
+            <div class="season-name" id="seasonName">初夏</div>
+            <div class="climate-desc" id="climateDesc">华北平原 · 麦浪金黄</div>
+            <div class="month-subtitle" id="monthSubtitle">气温渐高，偶有雷阵雨</div>
+        </div>
+
+        <!-- 头部 -->
+        <div class="calendar-header">
+            <button class="nav-btn" id="prevMonthBtn" title="上个月">◀</button>
+            <h2 id="monthYearTitle">2026年 6月</h2>
+            <button class="nav-btn" id="nextMonthBtn" title="下个月">▶</button>
+        </div>
+
+        <!-- 定位 + 天气城市 -->
+        <div style="text-align:center; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span id="locationDisplay" style="font-size:15px;color:#666;cursor:pointer;border-bottom:1px dashed #aaa;padding:3px 8px;font-weight:600;" title="点击切换城市">📍 北京</span>
+            <button id="pwaInstallBtn" style="display:none;background:#8b5e3c;color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer;white-space:nowrap;" title="安装到手机桌面">📲 安装APP</button>
+        </div>
+
+        <!-- 回到今天 -->
+        <div style="text-align: center; margin-bottom: 12px; display:flex; gap:8px; justify-content:center;">
+            <button class="today-btn" id="todayBtn">📍 回到今天</button>
+            <button class="today-btn" id="fortuneBtn" style="background:#8b5e3c;">🔮 今日运势</button>
+        </div>
+
+        <!-- 星期 -->
+        <div class="weekdays">
+            <span class="weekend">日</span>
+            <span>一</span>
+            <span>二</span>
+            <span>三</span>
+            <span>四</span>
+            <span>五</span>
+            <span class="weekend">六</span>
+        </div>
+
+        <!-- 日期网格 -->
+        <div class="calendar-grid" id="calendarGrid"></div>
+
+        <!-- 事件面板 -->
+        <div class="event-panel">
+            <h3>📝 <span class="selected-date-label" id="selectedDateLabel">点击日期</span> 的待办事项</h3>
+            <div class="event-input-row">
+                <input type="text" id="eventInput" placeholder="输入待办事项..." maxlength="50">
+                <button class="add-btn" id="addEventBtn">＋ 添加</button>
+            </div>
+            <ul class="event-list" id="eventList"></ul>
+        </div>
+    </div>
+    <!-- ==================== 黄历悬浮面板（点击日期后弹出） ==================== -->
+    <div class="huangli-overlay" id="huangliOverlay" style="display:none;">
+        <div class="huangli-popup" id="huangliPopup">
+            <!-- 节日主题动画背景层 -->
+            <div class="hl-theme-bg hl-theme-default" id="hlThemeBg"></div>
+            <!-- 日期头部 -->
+            <div class="hl-header">
+                <div class="hl-solar-date" id="hlSolarDate">2026年6月12日 星期五</div>
+                <div class="hl-lunar-date" id="hlLunarDate">农历 丙午年 四月廿七</div>
+                <div class="hl-ganzhi" id="hlGanzhi">干支 甲子日 · 五行属金</div>
+            </div>
+            <!-- 黄历正文 -->
+            <div class="hl-body">
+                <div class="hl-row">
+                    <span class="hl-label">宜</span>
+                    <span class="hl-value yi" id="hlYi">祭祀、祈福、出行</span>
+                </div>
+                <div class="hl-row">
+                    <span class="hl-label">忌</span>
+                    <span class="hl-value ji" id="hlJi">动土、安葬</span>
+                </div>
+                <hr class="hl-divider">
+                <div class="hl-row">
+                    <span class="hl-label">冲</span>
+                    <span class="hl-value" id="hlChong">冲马(丙午)煞南</span>
+                </div>
+                <div class="hl-row">
+                    <span class="hl-label">吉神</span>
+                    <span class="hl-value" id="hlJiShen">天德、月德、天赦</span>
+                </div>
+                <div class="hl-row">
+                    <span class="hl-label">凶神</span>
+                    <span class="hl-value" id="hlXiongShen">月破、大耗</span>
+                </div>
+            </div>
+            <!-- 关闭按钮 -->
+            <div class="hl-footer">
+                <button class="hl-close-btn" id="hlCloseBtn">关 闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 城市选择弹窗 ==================== -->
+    <div class="divination-overlay" id="cityOverlay" style="display:none;">
+        <div class="divination-panel" style="max-width:380px;">
+            <h3>🌍 选择城市</h3>
+            <div class="div-subtitle" id="citySubtitle">输入城市名搜索，或使用GPS自动定位</div>
+            <div style="display:flex;gap:6px;margin:10px 0;">
+                <input type="text" id="citySearchInput" placeholder="输入城市名…" style="flex:1;padding:8px 12px;border:2px solid #d4c5a0;border-radius:8px;font-size:14px;outline:none;">
+                <button class="div-btn primary" id="citySearchBtn" style="padding:8px 14px;">搜索</button>
+            </div>
+            <div id="citySearchResults" style="max-height:180px;overflow-y:auto;text-align:left;font-size:13px;"></div>
+            <div style="margin-top:10px;">
+                <button class="div-btn secondary" id="cityGpsBtn" style="width:100%;">📡 使用GPS/北斗自动定位</button>
+            </div>
+            <div class="div-btn-row" style="margin-top:12px;">
+                <button class="div-btn secondary" id="cityCloseBtn">关 闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 六爻卜卦弹窗 ==================== -->
+    <div class="divination-overlay" id="divinationOverlay" style="display:none;">
+        <div class="divination-panel" id="divinationPanel">
+            <h3>🔮 六爻卜卦</h3>
+            <div class="div-subtitle" id="divSubtitle">心中默念所求之事，点击卦桶摇卦</div>
+            <!-- 卦桶 -->
+            <div class="div-bucket-area" id="divBucketArea">
+                <div class="div-sticks" id="divSticks"></div>
+                <div class="div-bucket" id="divBucket">
+                    <div style="position:absolute;top:30%;left:50%;transform:translateX(-50%);font-size:24px;z-index:5;color:#3a2208;text-shadow:0 1px 0 rgba(180,140,80,0.3),0 -1px 0 rgba(0,0,0,0.3);font-weight:bold;letter-spacing:2px;">爻</div>
+                </div>
+            </div>
+            <!-- 点击提示 -->
+            <div class="div-click-hint" id="divClickHint">
+                还需摇卦 <span class="click-count">6</span> 次
+            </div>
+            <!-- 六条爻线 -->
+            <div class="yao-lines-area" id="yaoLinesArea"></div>
+            <!-- 结果区（初始隐藏） -->
+            <div class="hexagram-result" id="hexagramResult" style="display:none;"></div>
+            <!-- 按钮 -->
+            <div class="div-btn-row">
+                <button class="div-btn secondary" id="divCloseBtn">关 闭</button>
+                <button class="div-btn primary" id="divRetryBtn" style="display:none;">🔄 重新卜卦</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JavaScript ==================== -->
+    <script>
+        // ============================================================
+        // 一、华北平原 12 个月的气候数据
+        //    每个月份有：季节名、图标、气候描述、背景色、主题色等
+        // ============================================================
+        const monthClimate = [
+            { // 0 - 1月 隆冬
+                season: '❄️ 冬季 · 隆冬',
+                icon: '🌨️',
+                seasonName: '隆冬',
+                desc: '华北平原 · 冰天雪地',
+                subtitle: '寒冷干燥，北风凛冽，偶有降雪',
+                bodyBg: 'linear-gradient(135deg, #2c3e50 0%, #4a6fa5 30%, #b8c9e0 70%, #e8eef5 100%)',
+                bannerBg: 'linear-gradient(135deg, #3a6186, #4b6cb7)',
+                accentColor: '#3a6186',
+                todayBg: '#3a6186',
+                particles: 'snow'
+            },
+            { // 1 - 2月 晚冬
+                season: '❄️ 冬季 · 晚冬',
+                icon: '🌬️',
+                seasonName: '晚冬',
+                desc: '华北平原 · 春寒料峭',
+                subtitle: '气温缓慢回升，仍有寒潮侵袭',
+                bodyBg: 'linear-gradient(135deg, #5a7a9a 0%, #8faac7 40%, #c5d5e8 70%, #f0f3f8 100%)',
+                bannerBg: 'linear-gradient(135deg, #5b86b4, #7ba3cc)',
+                accentColor: '#5b86b4',
+                todayBg: '#5b86b4',
+                particles: 'snow'
+            },
+            { // 2 - 3月 初春
+                season: '🌱 春季 · 初春',
+                icon: '🌱',
+                seasonName: '初春',
+                desc: '华北平原 · 万物复苏',
+                subtitle: '冰雪消融，草木萌发，偶有沙尘',
+                bodyBg: 'linear-gradient(135deg, #c9b896 0%, #b5c9a0 30%, #c8e6c9 60%, #e8f5e9 100%)',
+                bannerBg: 'linear-gradient(135deg, #7a9a5b, #9bba7c)',
+                accentColor: '#7a9a5b',
+                todayBg: '#7a9a5b',
+                particles: 'none'
+            },
+            { // 3 - 4月 仲春
+                season: '🌸 春季 · 仲春',
+                icon: '🌸',
+                seasonName: '仲春',
+                desc: '华北平原 · 百花齐放',
+                subtitle: '温暖宜人，桃李盛开，春雨绵绵',
+                bodyBg: 'linear-gradient(135deg, #f8d3d3 0%, #f7c5cc 25%, #d4e7c5 55%, #e8f5e9 100%)',
+                bannerBg: 'linear-gradient(135deg, #e895a9, #f0b8c5)',
+                accentColor: '#d4788f',
+                todayBg: '#d4788f',
+                particles: 'petal'
+            },
+            { // 4 - 5月 晚春
+                season: '🌿 春季 · 晚春',
+                icon: '🌿',
+                seasonName: '晚春',
+                desc: '华北平原 · 绿意盎然',
+                subtitle: '日照增长，气温升高，万物繁茂',
+                bodyBg: 'linear-gradient(135deg, #a8d8a8 0%, #6db86d 20%, #c8e6c9 55%, #fff9c4 100%)',
+                bannerBg: 'linear-gradient(135deg, #4caf50, #66bb6a)',
+                accentColor: '#388e3c',
+                todayBg: '#388e3c',
+                particles: 'petal'
+            },
+            { // 5 - 6月 初夏
+                season: '☀️ 夏季 · 初夏',
+                icon: '🌾',
+                seasonName: '初夏',
+                desc: '华北平原 · 麦浪金黄',
+                subtitle: '气温渐高，偶有雷阵雨，小麦成熟',
+                bodyBg: 'linear-gradient(135deg, #87CEEB 0%, #f9e076 30%, #fff8dc 60%, #e8f5e9 100%)',
+                bannerBg: 'linear-gradient(135deg, #f39c12, #f1c40f)',
+                accentColor: '#e67e22',
+                todayBg: '#e67e22',
+                particles: 'none'
+            },
+            { // 6 - 7月 盛夏
+                season: '🌧️ 夏季 · 盛夏',
+                icon: '⛈️',
+                seasonName: '盛夏',
+                desc: '华北平原 · 雨季绵绵',
+                subtitle: '高温多雨，闷热潮湿，暴雨频繁',
+                bodyBg: 'linear-gradient(135deg, #4a6fa5 0%, #2c6e91 25%, #5588aa 50%, #c5dde8 100%)',
+                bannerBg: 'linear-gradient(135deg, #2c6e91, #3498db)',
+                accentColor: '#2c6e91',
+                todayBg: '#2c6e91',
+                particles: 'rain'
+            },
+            { // 7 - 8月 晚夏
+                season: '🔥 夏季 · 晚夏',
+                icon: '🔥',
+                seasonName: '晚夏',
+                desc: '华北平原 · 骄阳似火',
+                subtitle: '酷暑难耐，闷热至极，偶有暴雨',
+                bodyBg: 'linear-gradient(135deg, #e74c3c 0%, #f39c12 30%, #ff6b35 55%, #ffd89b 100%)',
+                bannerBg: 'linear-gradient(135deg, #e74c3c, #f39c12)',
+                accentColor: '#c0392b',
+                todayBg: '#c0392b',
+                particles: 'none'
+            },
+            { // 8 - 9月 初秋
+                season: '🍂 秋季 · 初秋',
+                icon: '🍂',
+                seasonName: '初秋',
+                desc: '华北平原 · 天高云淡',
+                subtitle: '暑气渐消，秋高气爽，天空湛蓝',
+                bodyBg: 'linear-gradient(135deg, #5dade2 0%, #85c1e9 25%, #fad7a1 60%, #fef9e7 100%)',
+                bannerBg: 'linear-gradient(135deg, #e8a440, #f0c060)',
+                accentColor: '#c6822a',
+                todayBg: '#c6822a',
+                particles: 'leaf'
+            },
+            { // 9 - 10月 深秋
+                season: '🍁 秋季 · 深秋',
+                icon: '🍁',
+                seasonName: '深秋',
+                desc: '华北平原 · 层林尽染',
+                subtitle: '秋叶金黄，凉爽舒适，丰收时节',
+                bodyBg: 'linear-gradient(135deg, #e67e22 0%, #d35400 25%, #f39c12 50%, #ffeaa7 100%)',
+                bannerBg: 'linear-gradient(135deg, #d35400, #e67e22)',
+                accentColor: '#a04000',
+                todayBg: '#a04000',
+                particles: 'leaf'
+            },
+            { // 10 - 11月 晚秋
+                season: '🌫️ 秋季 · 晚秋',
+                icon: '🌫️',
+                seasonName: '晚秋',
+                desc: '华北平原 · 落叶纷飞',
+                subtitle: '寒风渐起，草木凋零，偶有霜冻',
+                bodyBg: 'linear-gradient(135deg, #8d7b6a 0%, #a89880 25%, #c4b8a8 55%, #e8e0d5 100%)',
+                bannerBg: 'linear-gradient(135deg, #7d6b5a, #9b8b7a)',
+                accentColor: '#6b5b4a',
+                todayBg: '#6b5b4a',
+                particles: 'leaf'
+            },
+            { // 11 - 12月 初冬
+                season: '⛄ 冬季 · 初冬',
+                icon: '🌫️',
+                seasonName: '初冬',
+                desc: '华北平原 · 寒风渐起',
+                subtitle: '气温骤降，北风呼啸，初雪将至',
+                bodyBg: 'linear-gradient(135deg, #5d6d7e 0%, #85929e 30%, #b0bec5 55%, #e0e5e8 100%)',
+                bannerBg: 'linear-gradient(135deg, #546e7a, #78909c)',
+                accentColor: '#455a64',
+                todayBg: '#455a64',
+                particles: 'snow'
+            },
+        ];
+
+        // ============================================================
+        // 二、核心变量
+        // ============================================================
+        let currentDate = new Date(); // 当前显示的月份
+        let selectedDate = null; // 选中的日期 "YYYY-MM-DD"
+        let events = {}; // 事件数据
+        let particlesTimer = null; // 粒子动画定时器
+
+        // ============================================================
+        // 三、localStorage 读写
+        // ============================================================
+        function loadEvents() {
+            const saved = localStorage.getItem('calendar-events');
+            if (saved) {
+                events = JSON.parse(saved);
+            }
+        }
+
+        function saveEvents() {
+            localStorage.setItem('calendar-events', JSON.stringify(events));
+        }
+
+        // ============================================================
+        // 四、获取当前月份的气候数据
+        // ============================================================
+        function getClimate(monthIndex) {
+            return monthClimate[monthIndex]; // monthIndex: 0-11
+        }
+
+        // ============================================================
+        // 五、更新四季背景（核心新增功能）
+        // ============================================================
+        function updateSeasonBackground() {
+            const month = currentDate.getMonth(); // 0-11
+            const climate = getClimate(month);
+
+            // 1) 更新 body 背景
+            document.body.style.background = climate.bodyBg;
+
+            // 2) 更新四季横幅
+            document.getElementById('seasonBanner').style.background = climate.bannerBg;
+            document.getElementById('seasonIcon').textContent = climate.icon;
+            document.getElementById('seasonName').textContent = climate.seasonName;
+            // 直接使用 updateClimateForLocation 已计算好的地域名
+            const zoneName = window._climateZoneName || '华北平原';
+            const climateSuffix = climate.desc.includes('·') ?
+                climate.desc.split('·').pop().trim() : climate.desc;
+            document.getElementById('climateDesc').textContent =
+                zoneName + ' · ' + climateSuffix;
+            document.getElementById('monthSubtitle').textContent = climate.subtitle;
+
+            // 3) 更新"回到今天"按钮颜色
+            const todayBtn = document.getElementById('todayBtn');
+            todayBtn.style.background = climate.accentColor;
+
+            // 4) 更新"添加"按钮颜色
+            const addBtn = document.getElementById('addEventBtn');
+            addBtn.style.background = climate.accentColor;
+
+            // 5) 更新选中日期标签颜色
+            document.getElementById('selectedDateLabel').style.color = climate.accentColor;
+
+            // 6) 更新导航按钮悬停色（通过 CSS 变量或直接改）
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.style.color = climate.accentColor;
+            });
+
+            // 7) 更新今日格子的背景色（由 renderCalendar 里的 .today 决定）
+            //    通过动态注入一个 style 来实现今日格子颜色
+            let styleTag = document.getElementById('dynamic-today-style');
+            if (!styleTag) {
+                styleTag = document.createElement('style');
+                styleTag.id = 'dynamic-today-style';
+                document.head.appendChild(styleTag);
+            }
+            styleTag.textContent = `
+                .day-cell.today { background: ${climate.todayBg}; }
+                .day-cell.selected { border-color: ${climate.accentColor}; color: ${climate.accentColor}; }
+                .event-input-row input:focus { border-color: ${climate.accentColor}; }
+            `;
+
+            // 8) 更新天气粒子效果
+            updateParticles(climate.particles);
+        }
+
+        // ============================================================
+        // 六、天气粒子动画
+        // ============================================================
+        function updateParticles(type) {
+            const container = document.getElementById('weatherParticles');
+            container.innerHTML = ''; // 清空
+
+            if (type === 'none' || !type) return;
+
+            const count = type === 'rain' ? 60 : type === 'snow' ? 40 : 25;
+
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+
+                if (type === 'snow') {
+                    el.classList.add('snowflake');
+                    el.textContent = ['❄', '❅', '❆', '✦', '•'][Math.floor(Math.random() * 5)];
+                    el.style.left = Math.random() * 100 + '%';
+                    el.style.fontSize = (Math.random() * 16 + 8) + 'px';
+                    el.style.animationDuration = (Math.random() * 6 + 4) + 's';
+                    el.style.animationDelay = Math.random() * 5 + 's';
+                } else if (type === 'rain') {
+                    el.classList.add('raindrop');
+                    el.style.left = Math.random() * 100 + '%';
+                    el.style.height = (Math.random() * 12 + 8) + 'px';
+                    el.style.animationDuration = (Math.random() * 1 + 0.5) + 's';
+                    el.style.animationDelay = Math.random() * 2 + 's';
+                } else if (type === 'leaf') {
+                    el.classList.add('leaf');
+                    el.textContent = ['🍂', '🍁', '🍃', '🌾'][Math.floor(Math.random() * 4)];
+                    el.style.left = Math.random() * 100 + '%';
+                    el.style.fontSize = (Math.random() * 12 + 12) + 'px';
+                    el.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                    el.style.animationDelay = Math.random() * 6 + 's';
+                } else if (type === 'petal') {
+                    el.classList.add('petal');
+                    el.textContent = ['🌸', '💮', '🌷', '🌺'][Math.floor(Math.random() * 4)];
+                    el.style.left = Math.random() * 100 + '%';
+                    el.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                    el.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                    el.style.animationDelay = Math.random() * 7 + 's';
+                }
+
+                container.appendChild(el);
+            }
+        }
+
+        // ============================================================
+        // 七、节假日数据（公历节日 + 动态农历节日）
+        // ============================================================
+        function getHoliday(solarYear, solarMonth, solarDay) {
+            // 先查农历节日（动态计算，不再硬编码）
+            const lunar = solarToLunar(solarYear, solarMonth, solarDay);
+            if (lunar) {
+                const lunarHoliday = getLunarHoliday(lunar.lunarMonth, lunar.lunarDay, lunar.isLeap);
+                if (lunarHoliday) return lunarHoliday;
+
+                // 特殊：除夕（腊月最后一天，可能在腊月29或30）
+                const chuxi = getChuxiDate(lunar.lunarYear);
+                if (chuxi && lunar.lunarMonth === chuxi.lunarMonth &&
+                    lunar.lunarDay === chuxi.lunarDay && !lunar.isLeap) {
+                    return '🧨 除夕';
+                }
+            }
+
+            // 再查公历固定节日
+            const dateStr = `${solarMonth + 1}月${solarDay}日`;
+            const solarHolidays = {
+                '1月1日': '🎉 元旦',
+                '2月14日': '💝 情人节',
+                '3月8日': '👩 妇女节',
+                '3月12日': '🌳 植树节',
+                '4月4日': '🌿 清明节',
+                '4月5日': '🌿 清明节',
+                '5月1日': '🏖️ 劳动节',
+                '5月4日': '🔥 青年节',
+                '6月1日': '👶 儿童节',
+                '7月1日': '🎂 建党节',
+                '8月1日': '⭐ 建军节',
+                '9月10日': '📚 教师节',
+                '10月1日': '🇨🇳 国庆节',
+                '12月25日': '🎄 圣诞节',
+            };
+
+            return solarHolidays[dateStr] || null;
+        }
+
+        // ============================================================
+        // 八、农历（阴历）计算模块
+        //    数据来源：1900-2100 年农历数据表，广泛用于各类日历软件
+        //    每个十六进制数编码了一年的农历信息：
+        //      低 4 位 = 闰月月份（0 = 没有闰月）
+        //      剩余位  = 按 bit 位标记每月是大月(30天)还是小月(29天)
+        // ============================================================
+        const lunarInfo = [
+            0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2, // 1900-1909
+            0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977, // 1910-1919
+            0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970, // 1920-1929
+            0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950, // 1930-1939
+            0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557, // 1940-1949
+            0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0, // 1950-1959
+            0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0, // 1960-1969
+            0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6, // 1970-1979
+            0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570, // 1980-1989
+            0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x055c0, 0x0ab60, 0x096d5, 0x092e0, // 1990-1999
+            0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5, // 2000-2009
+            0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930, // 2010-2019
+            0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530, // 2020-2029
+            0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45, // 2030-2039
+            0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0, // 2040-2049
+            0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06aa0, 0x1a6c4, 0x0aae0, // 2050-2059
+            0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4, // 2060-2069
+            0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0, // 2070-2079
+            0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160, // 2080-2089
+            0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a4d0, 0x0d150, 0x0f252, // 2090-2099
+            0x0d520 // 2100
+        ];
+
+        // 农历月份名
+        const lunarMonthNames = [
+            '', '正月', '二月', '三月', '四月', '五月', '六月',
+            '七月', '八月', '九月', '十月', '冬月', '腊月'
+        ];
+
+        // 农历日名（1-30）
+        const lunarDayNames = [
+            '', // 占位，从 1 开始
+            '初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
+            '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
+            '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'
+        ];
+
+        // 天干地支
+        const tianGan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const diZhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const shengXiao = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
+
+        /**
+         * 计算指定公历日期距离 1900-01-31（1900年正月初一）的天数
+         * @returns {number} 偏移天数
+         */
+        function getSolarDayOffset(year, month, day) {
+            // 计算从 1900-01-31 到目标日期的天数
+            let days = 0;
+
+            // 累加整年的天数
+            for (let y = 1900; y < year; y++) {
+                days += isLeapYear(y) ? 366 : 365;
+            }
+
+            // 累加本年已过月份的天数
+            const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            if (isLeapYear(year)) monthDays[1] = 29;
+            for (let m = 0; m < month; m++) {
+                days += monthDays[m];
+            }
+
+            // 加上当月天数
+            days += day;
+
+            // 减去 1900-01-31 本身在 1900 年的偏移（1月31日是第31天）
+            // 1900-01-01 到 1900-01-31 有 31 天
+            days -= 31;
+
+            return days;
+        }
+
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+
+        /**
+         * 获取指定农历年的总天数
+         */
+        function getLunarYearDays(yearIndex) {
+            // yearIndex 是相对于 1900 的偏移
+            const info = lunarInfo[yearIndex];
+            let days = 0;
+            // 遍历 12 个月（可能还有闰月）
+            const leapMonth = info & 0xF;
+            const monthData = info >> 4;
+
+            for (let m = 1; m <= 12; m++) {
+                days += getLunarMonthDays(yearIndex, m);
+            }
+            if (leapMonth > 0) {
+                days += getLunarMonthDays(yearIndex, leapMonth + 12); // 闰月用 >12 的编号标记
+            }
+            return days;
+        }
+
+        /**
+         * 获取农历某月的天数
+         * @param {number} yearIndex 相对 1900 的年偏移
+         * @param {number} month 1-12 普通月，13+ 表示闰月
+         */
+        function getLunarMonthDays(yearIndex, month) {
+            const info = lunarInfo[yearIndex];
+            const leapMonth = info & 0xF;
+            const monthData = info >> 4;
+
+            // 判断该月是大月(30天)还是小月(29天)
+            let bitPos;
+            if (month > 12) {
+                // 闰月
+                bitPos = leapMonth; // 闰月紧跟同名月份之后
+            } else if (leapMonth > 0 && month > leapMonth) {
+                bitPos = month; // 闰月之后，bit 位置+1（因为插入了闰月）
+            } else {
+                bitPos = month - 1; // 正常位置
+            }
+
+            return (monthData & (1 << bitPos)) ? 30 : 29;
+        }
+
+        /**
+         * 公历转农历 —— 核心转换函数
+         * @returns {{ lunarYear, lunarMonth, lunarDay, isLeap, yearName }}
+         */
+        function solarToLunar(solarYear, solarMonth, solarDay) {
+            // 计算从基准日（1900-01-31 = 农历1900年正月初一）的偏移天数
+            let offset = getSolarDayOffset(solarYear, solarMonth, solarDay);
+
+            if (offset < 0) {
+                // 1900-01-31 之前的数据不支持，返回近似值
+                return {
+                    lunarYear: solarYear,
+                    lunarMonth: solarMonth + 1,
+                    lunarDay: solarDay,
+                    isLeap: false,
+                    yearName: ''
+                };
+            }
+
+            // 1) 确定农历年份
+            let yearIndex = 0;
+            let lunarYear = 1900;
+            while (yearIndex < lunarInfo.length) {
+                const yearDays = getLunarYearDays(yearIndex);
+                if (offset < yearDays) break;
+                offset -= yearDays;
+                yearIndex++;
+                lunarYear++;
+            }
+
+            if (yearIndex >= lunarInfo.length) {
+                // 超出数据范围
+                return null;
+            }
+
+            // 2) 确定农历月份
+            const info = lunarInfo[yearIndex];
+            const leapMonth = info & 0xF;
+            let lunarMonth = 1;
+            let isLeap = false;
+
+            for (let m = 1; m <= 12; m++) {
+                const regularDays = getLunarMonthDays(yearIndex, m);
+                if (offset < regularDays) {
+                    lunarMonth = m;
+                    isLeap = false;
+                    break;
+                }
+                offset -= regularDays;
+
+                // 检查是否有闰月
+                if (leapMonth === m) {
+                    const leapDays = getLunarMonthDays(yearIndex, m + 12);
+                    if (offset < leapDays) {
+                        lunarMonth = m;
+                        isLeap = true;
+                        break;
+                    }
+                    offset -= leapDays;
+                }
+            }
+
+            // 3) 农历日
+            const lunarDay = offset + 1;
+
+            // 4) 干支年份名
+            const tgIndex = (lunarYear - 4) % 10;
+            const dzIndex = (lunarYear - 4) % 12;
+            const yearName = tianGan[tgIndex] + diZhi[dzIndex] + '年';
+
+            return {
+                lunarYear,
+                lunarMonth,
+                lunarDay,
+                isLeap,
+                yearName,
+                shengXiao: shengXiao[dzIndex]
+            };
+        }
+
+        /**
+         * 获取格式化后的农历日期文本（用于日历格子显示）
+         */
+        function getLunarDateText(solarYear, solarMonth, solarDay) {
+            const lunar = solarToLunar(solarYear, solarMonth, solarDay);
+            if (!lunar) return '';
+
+            // 如果是初一，显示月份名（如"正月"）
+            if (lunar.lunarDay === 1) {
+                const prefix = lunar.isLeap ? '闰' : '';
+                return {
+                    text: prefix + lunarMonthNames[lunar.lunarMonth],
+                    isFirstDay: true,
+                    isLeap: lunar.isLeap
+                };
+            }
+
+            return {
+                text: lunarDayNames[lunar.lunarDay],
+                isFirstDay: false,
+                isLeap: lunar.isLeap
+            };
+        }
+
+        /**
+         * 获取农历传统节日（基于农历月日动态计算）
+         */
+        function getLunarHoliday(lunarMonth, lunarDay, isLeap) {
+            if (isLeap) return null; // 闰月一般不过节
+
+            const key = `${lunarMonth}-${lunarDay}`;
+            const holidays = {
+                '1-1': '🧧 春节',
+                '1-2': '🧧 年初二',
+                '1-3': '🧧 年初三',
+                '1-15': '🏮 元宵节',
+                '2-2': '🐲 龙抬头',
+                '5-5': '🐉 端午节',
+                '7-7': '💫 七夕',
+                '7-15': '🪔 中元节',
+                '8-15': '🌕 中秋节',
+                '9-9': '🌺 重阳节',
+                '12-30': '🧨 除夕',
+            };
+
+            return holidays[key] || null;
+        }
+
+        /**
+         * 获取除夕（农历十二月的最后一天）
+         */
+        function getChuxiDate(lunarYear) {
+            const yearIndex = lunarYear - 1900;
+            if (yearIndex < 0 || yearIndex >= lunarInfo.length) return null;
+
+            const month12Days = getLunarMonthDays(yearIndex, 12);
+            return { lunarMonth: 12, lunarDay: month12Days };
+        }
+
+        // ============================================================
+        // 九、黄历（Huangli）模块 —— 日干支、宜忌、冲煞、吉凶神
+        // ============================================================
+
+        // 日干支基准：1900-01-01 = 甲戌日（天干甲=0, 地支戌=10, 即第10位）
+        const DAY_GANZHI_BASE = 10; // 1900-01-01 在 60 干支中的索引
+
+        function getDayGanZhi(solarYear, solarMonth, solarDay) {
+            // 计算从 1900-01-01 到目标日期的天数
+            let days = 0;
+            for (let y = 1900; y < solarYear; y++) {
+                days += isLeapYear(y) ? 366 : 365;
+            }
+            const md = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            if (isLeapYear(solarYear)) md[1] = 29;
+            for (let m = 0; m < solarMonth; m++) days += md[m];
+            days += solarDay - 1; // 到目标日期的前一天
+
+            const idx = (days + DAY_GANZHI_BASE) % 60;
+            return {
+                ganIndex: idx % 10,
+                zhiIndex: idx % 12,
+                gan: tianGan[idx % 10],
+                zhi: diZhi[idx % 12],
+                fullName: tianGan[idx % 10] + diZhi[idx % 12],
+                cycleIndex: idx
+            };
+        }
+
+        // 冲煞对照
+        const clashMap = {
+            '子': { chong: '马', sha: '南' },
+            '丑': { chong: '羊', sha: '东' },
+            '寅': { chong: '猴', sha: '北' },
+            '卯': { chong: '鸡', sha: '西' },
+            '辰': { chong: '狗', sha: '南' },
+            '巳': { chong: '猪', sha: '东' },
+            '午': { chong: '鼠', sha: '北' },
+            '未': { chong: '牛', sha: '西' },
+            '申': { chong: '虎', sha: '南' },
+            '酉': { chong: '兔', sha: '东' },
+            '戌': { chong: '龙', sha: '北' },
+            '亥': { chong: '蛇', sha: '西' },
+        };
+
+        // 五行对应天干
+        const ganWuXing = {
+            '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
+            '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水'
+        };
+
+        // 宜忌词库
+        const YI_POOL = [
+            '祭祀', '嫁娶', '订婚', '纳采', '开市', '交易', '出行', '会友',
+            '入宅', '安床', '修造', '动土', '祈福', '求嗣', '入学', '栽种',
+            '纳财', '扫舍', '理发', '沐浴', '解除', '安机械', '纳畜',
+            '竖柱', '上梁', '开光', '立券', '订盟', '移徙', '作灶'
+        ];
+        const JI_POOL = [
+            '安葬', '行丧', '开渠', '伐木', '破土', '移徙',
+            '开仓', '出货', '取渔', '畋猎', '置产', '词讼',
+            '安门', '作梁', '造桥', '穿井', '鼓铸'
+        ];
+        const JI_SHEN_POOL = [
+            '天德', '月德', '天赦', '天恩', '月恩', '天喜', '三合', '六合',
+            '驿马', '天后', '天医', '时德', '阳德', '阴德', '福星', '禄星',
+            '天官', '喜神', '玉堂', '司命', '青龙', '明堂'
+        ];
+        const XIONG_SHEN_POOL = [
+            '月破', '大耗', '劫煞', '灾煞', '天火', '地火', '四废', '五虚',
+            '月煞', '月刑', '月害', '月厌', '天吏', '致死', '五鬼', '白虎',
+            '天雄', '地雌', '死神', '病符', '丧门'
+        ];
+
+        /**
+         * 基于干支和农历日期，确定性伪随机选词
+         */
+        function seededPick(pool, seed, count) {
+            const result = [];
+            const available = [...pool];
+            let s = seed;
+            for (let i = 0; i < count && available.length > 0; i++) {
+                s = (s * 1103515245 + 12345) & 0x7fffffff;
+                const idx = s % available.length;
+                result.push(available[idx]);
+                available.splice(idx, 1);
+            }
+            return result;
+        }
+
+        /**
+         * 获取某一天的完整黄历信息
+         */
+        function getHuangliData(solarYear, solarMonth, solarDay) {
+            const dayGZ = getDayGanZhi(solarYear, solarMonth, solarDay);
+            const lunar = solarToLunar(solarYear, solarMonth, solarDay);
+
+            const clash = clashMap[dayGZ.zhi] || { chong: '—', sha: '—' };
+            const wuXing = ganWuXing[dayGZ.gan] || '—';
+
+            // 用干支索引 + 农历月日生成确定性种子
+            const seed = dayGZ.cycleIndex * 100 + (lunar ? lunar.lunarMonth * 31 + lunar.lunarDay : 0);
+
+            // 根据日地支和种子动态生成宜忌条数
+            const yiCount = 2 + (seed % 4);  // 2~5 条宜
+            const jiCount = 1 + ((seed >> 3) % 3); // 1~3 条忌
+            const jsCount = 2 + ((seed >> 6) % 3); // 2~4 个吉神
+            const xsCount = 1 + ((seed >> 9) % 3); // 1~3 个凶神
+
+            const yi = seededPick(YI_POOL, seed, yiCount);
+            const ji = seededPick(JI_POOL, seed + 1, jiCount);
+            const jiShen = seededPick(JI_SHEN_POOL, seed + 2, jsCount);
+            const xiongShen = seededPick(XIONG_SHEN_POOL, seed + 3, xsCount);
+
+            return {
+                dayGZ,
+                lunar,
+                clash,
+                wuXing,
+                yi,
+                ji,
+                jiShen,
+                xiongShen,
+                seed
+            };
+        }
+
+        // ============================================================
+        // 十、节日音效（Web Audio API 合成）
+        // ============================================================
+        let audioCtx = null;
+
+        function getAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+            }
+            // 手机浏览器会暂停 AudioContext，需要 resume
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // 第一次用户点击时解锁音频（手机浏览器限制）
+        function unlockAudio() {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+        document.addEventListener('click', unlockAudio, { once: true });
+
+        /** 鞭炮声 —— 短噪声脉冲串 */
+        function playFirecrackerSound() {
+            try {
+                const ctx = getAudioCtx();
+                if (ctx.state === 'suspended') { ctx.resume(); return; }
+                const now = ctx.currentTime;
+
+                // 10 次短噪声脉冲模拟鞭炮
+                for (let i = 0; i < 12; i++) {
+                    const t = now + i * 0.08 + Math.random() * 0.04;
+                    const bufferSize = ctx.sampleRate * 0.05;
+                    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let j = 0; j < bufferSize; j++) {
+                        data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.15));
+                    }
+                    const src = ctx.createBufferSource();
+                    src.buffer = buffer;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(0.25, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(800 + Math.random() * 2000, t);
+                    filter.Q.setValueAtTime(0.5, t);
+                    src.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    src.start(t);
+                    src.stop(t + 0.07);
+                }
+            } catch (e) {
+                // 静默处理不支持的情况
+            }
+        }
+
+        /** 节日钟声/提示音 */
+        function playFestivalChime() {
+            try {
+                const ctx = getAudioCtx();
+                if (ctx.state === 'suspended') { ctx.resume(); return; }
+                const now = ctx.currentTime;
+                const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                    gain.gain.setValueAtTime(0.18, now + i * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + i * 0.12);
+                    osc.stop(now + i * 0.12 + 0.4);
+                });
+            } catch (e) {}
+        }
+
+        /** 根据节日类型播放对应音效 */
+        function playFestivalSound(festivalType) {
+            switch (festivalType) {
+                case 'spring':
+                case 'guoqing':
+                    playFirecrackerSound();
+                    break;
+                case 'yuanxiao':
+                case 'qixi':
+                case 'midautumn':
+                case 'dragonboat':
+                case 'chongyang':
+                case 'qingming':
+                case 'jiandang':
+                case 'jianjun':
+                case 'jiaoshi':
+                case 'shengdan':
+                    playFestivalChime();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // ============================================================
+        // 十一、节日主题弹出面板
+        // ============================================================
+
+        /**
+         * 判断某日期属于哪个节日主题
+         * @returns { type, name, icon } 或 null
+         */
+        function getFestivalTheme(solarYear, solarMonth, solarDay) {
+            const lunar = solarToLunar(solarYear, solarMonth, solarDay);
+            if (!lunar) return null;
+
+            const m = lunar.lunarMonth;
+            const d = lunar.lunarDay;
+            const isLeap = lunar.isLeap;
+            if (isLeap) return null;
+
+            const festivals = [
+                { type: 'spring', key: '1-1', name: '春节', icon: '🧧' },
+                { type: 'spring', key: '1-2', name: '年初二', icon: '🧨' },
+                { type: 'spring', key: '1-3', name: '年初三', icon: '🎆' },
+                { type: 'yuanxiao', key: '1-15', name: '元宵节', icon: '🏮' },
+                { type: 'qingming', key: '2-2', name: '龙抬头', icon: '🐲' },
+                { type: 'dragonboat', key: '5-5', name: '端午节', icon: '🐉' },
+                { type: 'qixi', key: '7-7', name: '七夕', icon: '💫' },
+                { type: 'zhongyuan', key: '7-15', name: '中元节', icon: '🪔' },
+                { type: 'midautumn', key: '8-15', name: '中秋节', icon: '🌕' },
+                { type: 'chongyang', key: '9-9', name: '重阳节', icon: '🌺' },
+            ];
+
+            const key = `${m}-${d}`;
+            const fest = festivals.find(f => f.key === key);
+            if (fest) return fest;
+
+            // 除夕
+            const chuxi = getChuxiDate(lunar.lunarYear);
+            if (chuxi && m === chuxi.lunarMonth && d === chuxi.lunarDay) {
+                return { type: 'spring', name: '除夕', icon: '🧨' };
+            }
+
+            // 公历节日
+            const solarFestivals = [
+                { type: 'jiandang', m: 7, d: 1, name: '建党节', icon: '🚩' },
+                { type: 'jianjun', m: 8, d: 1, name: '建军节', icon: '⭐' },
+                { type: 'jiaoshi', m: 9, d: 10, name: '教师节', icon: '📚' },
+                { type: 'guoqing', m: 10, d: 1, name: '国庆节', icon: '🇨🇳' },
+                { type: 'shengdan', m: 12, d: 25, name: '圣诞节', icon: '🎄' },
+            ];
+            for (const sf of solarFestivals) {
+                if (solarMonth + 1 === sf.m && solarDay === sf.d) return sf;
+            }
+
+            return null;
+        }
+
+        /**
+         * ============================================================
+         * 节日主题背景渲染 —— 完整场景画面
+         * 每个节日 = 天空 + 视觉焦点 + 地面/建筑剪影 + 氛围动画
+         * ============================================================
+         */
+        function renderThemeBackground(container, festivalType) {
+            container.innerHTML = '';
+            container.className = 'hl-theme-bg';
+
+            // ========== 辅助函数 ==========
+            function el(styles) {
+                const d = document.createElement('div');
+                d.style.cssText = styles + ';position:absolute;pointer-events:none;';
+                return d;
+            }
+
+            function addSilhouette(z, bottom, styles) {
+                const s = el('z-index:' + z + ';bottom:' + bottom + ';left:0;right:0;' + styles);
+                container.appendChild(s);
+                return s;
+            }
+
+            // ============================================
+            // 场景 1：春节 — 古城除夕夜
+            // ============================================
+            if (festivalType === 'spring') {
+                container.style.background = 'linear-gradient(180deg, #0a0204 0%, #1a0508 15%, #2d0a10 30%, #4a1520 55%, #8b2020 80%, #c0392b 100%)';
+                // 远山
+                const mt1 = addSilhouette(0, '15%', 'height:28%;background:linear-gradient(180deg,transparent,#1a0a0f);border-radius:60% 60% 0 0;left:-10%;right:-10%;');
+                const mt2 = addSilhouette(0, '12%', 'height:22%;background:linear-gradient(180deg,transparent,#2d1015);border-radius:50% 70% 0 0;left:20%;right:-5%;');
+                // 古建筑剪影（城墙 + 楼阁）
+                const wall = addSilhouette(1, '10%', 'height:18%;background:#1a080a;');
+                // 城楼
+                const tower = addSilhouette(2, '22%', 'left:25%;width:50%;');
+                tower.innerHTML = `
+                    <div style="position:absolute;bottom:0;left:0;right:0;height:60%;background:#1a080a;border-radius:5px 5px 0 0;"></div>
+                    <div style="position:absolute;bottom:55%;left:5%;right:5%;height:45%;background:#1a080a;">
+                        <div style="position:absolute;top:-15px;left:-5px;right:-5px;height:16px;background:#2d1015;border-radius:3px 3px 0 0;"></div>
+                    </div>
+                    <div style="position:absolute;bottom:70%;left:30%;width:40%;height:30%;background:#1a080a;border-radius:3px 3px 0 0;">
+                        <div style="position:absolute;top:-8px;left:-3px;right:-3px;height:8px;background:#3d1818;border-radius:2px;"></div>
+                    </div>
+                `;
+                // 红灯笼（挂在城楼上）
+                for (let i = 0; i < 4; i++) {
+                    const lx = 28 + i * 15;
+                    const lantern = el('z-index:3;left:' + lx + '%;top:30%;width:10px;height:14px;background:radial-gradient(#ff4444,#cc0000);border-radius:50% 50% 45% 45%;box-shadow:0 0 12px rgba(255,60,60,0.7),0 0 25px rgba(255,40,40,0.3);animation:lanternSwing 2s ease-in-out ' + i * 0.3 + 's infinite;');
+                    container.appendChild(lantern);
+                    // 灯笼线
+                    const line = el('z-index:2;left:' + (lx + 4.5) + '%;top:22%;width:1px;height:8%;background:#8b6914;');
+                    container.appendChild(line);
+                }
+                // 烟花（多组，在天空爆开）
+                const fwColors = [
+                    ['#ff3333', '#ffd700', '#ff6600', '#fff'],
+                    ['#ff69b4', '#ff1493', '#ffffff', '#ffcc00'],
+                    ['#ffd700', '#ff8c00', '#ffffff', '#ff4444'],
+                    ['#00ccff', '#66ffcc', '#ffffff', '#ffdd00'],
+                    ['#ff4500', '#ffff00', '#ffffff', '#ff6347'],
+                ];
+                for (let g = 0; g < 5; g++) {
+                    const cx = 15 + g * 18;
+                    const cy = 12 + (g % 3) * 16;
+                    const colors = fwColors[g];
+                    for (let i = 0; i < 20; i++) {
+                        const angle = (i / 20) * Math.PI * 2;
+                        const dist = 35 + Math.random() * 55;
+                        const p = el(
+                            'z-index:4;left:' + cx + '%;top:' + cy + '%;' +
+                            'width:' + (1.5 + Math.random() * 2.5) + 'px;height:' + (1.5 + Math.random() * 2.5) + 'px;' +
+                            'border-radius:50%;background:' + colors[i % colors.length] + ';' +
+                            '--bx:' + Math.cos(angle) * dist + 'px;--by:' + Math.sin(angle) * dist + 'px;' +
+                            'animation:burstParticle ' + (1 + Math.random() * 1.5) + 's ease-out ' + (g * 0.25 + Math.random() * 0.6) + 's infinite;' +
+                            'box-shadow:0 0 ' + (2 + Math.random() * 4) + 'px currentColor;'
+                        );
+                        container.appendChild(p);
+                    }
+                }
+                // 鞭炮火星
+                for (let i = 0; i < 12; i++) {
+                    const spark = el(
+                        'z-index:5;left:' + (Math.random() * 90) + '%;top:' + (55 + Math.random() * 40) + '%;' +
+                        'width:2px;height:2px;border-radius:50%;background:#ffd700;' +
+                        'animation:sparkPop ' + (0.8 + Math.random()) + 's ease-out ' + (Math.random() * 3) + 's infinite;'
+                    );
+                    container.appendChild(spark);
+                }
+            }
+
+            // ============================================
+            // 场景 2：元宵 — 古城天灯夜
+            // ============================================
+            else if (festivalType === 'yuanxiao') {
+                container.style.background = 'linear-gradient(180deg, #0a0820 0%, #1a1040 20%, #2d1860 45%, #5a2870 70%, #c06030 100%)';
+                // 星空
+                for (let i = 0; i < 35; i++) {
+                    container.appendChild(el(
+                        'z-index:1;left:' + Math.random() * 100 + '%;top:' + Math.random() * 55 + '%;' +
+                        'width:' + (1 + Math.random() * 2) + 'px;height:' + (1 + Math.random() * 2) + 'px;' +
+                        'border-radius:50%;background:#fff;' +
+                        'animation:starTwinkleGif ' + (1.5 + Math.random() * 3) + 's ease-in-out ' + Math.random() * 2 + 's infinite;'
+                    ));
+                }
+                // 满月（小一些，天上）
+                const moon2 = el(
+                    'z-index:2;right:15%;top:8%;width:40px;height:40px;border-radius:50%;' +
+                    'background:radial-gradient(circle at 40% 40%, #fffde7,#fff9c4 30%,#ffe082 70%,#ffb300);' +
+                    'box-shadow:0 0 20px rgba(255,235,150,0.5),0 0 50px rgba(255,215,0,0.2);'
+                );
+                container.appendChild(moon2);
+                // 古镇建筑剪影
+                const town = addSilhouette(1, '8%', 'height:22%;');
+                town.innerHTML = Array(8).fill(0).map((_, i) =>
+                    '<div style="position:absolute;left:' + i * 13 + '%;bottom:0;width:11%;height:' + (30 + (i % 3) * 25) + '%;background:#15081a;border-radius:3px 3px 0 0;">' +
+                    '<div style="position:absolute;top:' + (-(5 + (i % 2) * 6)) + 'px;left:-1px;right:-1px;height:' + (6 + (i % 2) * 6) + 'px;background:#1a0a20;border-radius:2px 2px 0 0;"></div>' +
+                    '</div>'
+                ).join('');
+                // 天灯升起
+                for (let i = 0; i < 7; i++) {
+                    const lx = 8 + i * 13;
+                    const lantern = el(
+                        'z-index:3;left:' + lx + '%;bottom:' + (5 + i * 6) + '%;' +
+                        'width:16px;height:22px;' +
+                        'background:radial-gradient(ellipse,#ff9f43 10%,#f39c12 50%,#e67e22 85%,#c0392b);' +
+                        'border-radius:48% 48% 42% 42%;' +
+                        'box-shadow:0 0 16px rgba(255,159,67,0.7),0 0 35px rgba(243,156,18,0.35),0 0 55px rgba(230,126,34,0.15);' +
+                        'animation:lanternRise ' + (5 + i * 1.2) + 's ease-in-out ' + (i * 0.7) + 's infinite;'
+                    );
+                    container.appendChild(lantern);
+                }
+            }
+
+            // ============================================
+            // 场景 3：七夕 — 银河鹊桥会
+            // ============================================
+            else if (festivalType === 'qixi') {
+                container.style.background = 'linear-gradient(180deg, #020615 0%, #060e28 20%, #0d1a45 45%, #162860 70%, #1e3878 100%)';
+                // 密集星海
+                for (let i = 0; i < 60; i++) {
+                    const sz = 0.8 + Math.random() * 3;
+                    container.appendChild(el(
+                        'z-index:1;left:' + Math.random() * 100 + '%;top:' + Math.random() * 75 + '%;' +
+                        'width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:#fff;' +
+                        'animation:starTwinkleGif ' + (1 + Math.random() * 4) + 's ease-in-out ' + Math.random() * 3 + 's infinite;' +
+                        'box-shadow:0 0 ' + (sz * 2) + 'px rgba(200,210,255,0.6);'
+                    ));
+                }
+                // 银河带（横跨对角）
+                const mw = el(
+                    'z-index:0;left:5%;top:10%;width:90%;height:80%;' +
+                    'background:radial-gradient(ellipse at 45% 50%,rgba(130,160,255,0.14) 0%,rgba(100,140,240,0.06) 35%,transparent 65%);' +
+                    'border-radius:50%;transform:rotate(-12deg);'
+                );
+                container.appendChild(mw);
+                // 牛郎星（左下亮星）
+                const altair = el(
+                    'z-index:4;left:18%;top:55%;width:8px;height:8px;border-radius:50%;background:#fff;' +
+                    'box-shadow:0 0 8px #aaccff,0 0 18px #88aaff,0 0 30px rgba(136,170,255,0.5);' +
+                    'animation:glowPulse 2.5s ease-in-out infinite;'
+                );
+                container.appendChild(altair);
+                const altairLabel = el('z-index:4;left:10%;top:62%;font-size:9px;color:rgba(180,200,255,0.8);');
+                altairLabel.textContent = '牛郎星';
+                container.appendChild(altairLabel);
+                // 织女星（右上亮星）
+                const vega = el(
+                    'z-index:4;right:20%;top:18%;width:8px;height:8px;border-radius:50%;background:#fff;' +
+                    'box-shadow:0 0 8px #ffccff,0 0 18px #ffaaff,0 0 30px rgba(255,170,255,0.5);' +
+                    'animation:glowPulse 2.5s ease-in-out 1.2s infinite;'
+                );
+                container.appendChild(vega);
+                const vegaLabel = el('z-index:4;right:12%;top:25%;font-size:9px;color:rgba(255,200,255,0.8);');
+                vegaLabel.textContent = '织女星';
+                container.appendChild(vegaLabel);
+                // 鹊桥（连接两颗星的小鸟）
+                for (let i = 0; i < 22; i++) {
+                    const t = i / 21; // 0 to 1
+                    const bx = 18 + t * 55;
+                    const by = 55 - t * 37 + Math.sin(t * Math.PI) * 10;
+                    container.appendChild(el(
+                        'z-index:3;left:' + bx + '%;top:' + by + '%;' +
+                        'width:4px;height:3px;border-radius:50%;background:rgba(200,210,255,0.7);' +
+                        'animation:starTwinkleGif ' + (1.5 + Math.random()) + 's ease-in-out ' + (i * 0.06) + 's infinite;' +
+                        'box-shadow:0 0 3px rgba(180,200,255,0.5);'
+                    ));
+                }
+                // 流星
+                for (let i = 0; i < 2; i++) {
+                    container.appendChild(el(
+                        'z-index:5;right:' + (15 + i * 35) + '%;top:' + (5 + i * 20) + '%;' +
+                        'width:50px;height:2px;' +
+                        'background:linear-gradient(90deg,transparent,#fff,rgba(180,200,255,0.7));' +
+                        'border-radius:1px;' +
+                        'animation:shootingStar ' + (3 + i * 2.5) + 's linear ' + (i * 4) + 's infinite;'
+                    ));
+                }
+                // 远山剪影
+                addSilhouette(0, '5%', 'height:16%;background:linear-gradient(180deg,transparent,rgba(10,16,30,0.8));border-radius:50% 60% 0 0;left:-5%;right:-5%;');
+            }
+
+            // ============================================
+            // 场景 4：中秋 — 皓月当空（用户认可的版本，保持并微调）
+            // ============================================
+            else if (festivalType === 'midautumn') {
+                container.style.background = 'linear-gradient(180deg, #020818 0%, #0a1628 30%, #1a2a4a 60%, #2a4a6a 100%)';
+                // 星空
+                for (let i = 0; i < 30; i++) {
+                    container.appendChild(el(
+                        'z-index:1;left:' + Math.random() * 100 + '%;top:' + Math.random() * 55 + '%;' +
+                        'width:' + (1 + Math.random() * 2) + 'px;height:' + (1 + Math.random() * 2) + 'px;' +
+                        'border-radius:50%;background:#fff;' +
+                        'animation:starTwinkleGif ' + (2 + Math.random() * 3) + 's ease-in-out ' + Math.random() * 2 + 's infinite;'
+                    ));
+                }
+                // 远山
+                addSilhouette(0, '6%', 'height:18%;background:linear-gradient(180deg,transparent,#0a1220);border-radius:55% 50% 0 0;left:-10%;right:-10%;');
+                addSilhouette(0, '5%', 'height:14%;background:linear-gradient(180deg,transparent,#0d1628);border-radius:40% 65% 0 0;left:15%;right:5%;');
+                // 大月亮
+                const moon = el(
+                    'z-index:3;right:20%;top:10%;width:60px;height:60px;border-radius:50%;' +
+                    'background:radial-gradient(circle at 38% 38%,#fffde7 0%,#fff9c4 15%,#ffd54f 55%,#f9a825 85%,#f57f17 100%);' +
+                    'box-shadow:0 0 30px rgba(255,235,150,0.5),0 0 80px rgba(255,215,0,0.25),0 0 130px rgba(255,200,50,0.12);' +
+                    'animation:moonGlow 3s ease-in-out infinite;'
+                );
+                container.appendChild(moon);
+                // 月光晕
+                container.appendChild(el(
+                    'z-index:2;right:12%;top:4%;width:90px;height:90px;border-radius:50%;' +
+                    'background:radial-gradient(circle,rgba(255,230,150,0.18) 0%,rgba(255,200,100,0.06) 55%,transparent 70%);' +
+                    'animation:glowPulse 3s ease-in-out 0.5s infinite;'
+                ));
+                // 水中月影
+                container.appendChild(el(
+                    'z-index:1;left:25%;bottom:8%;width:35px;height:10px;border-radius:50%;' +
+                    'background:rgba(255,230,180,0.06);' +
+                    'animation:rippleWide 3s ease-in-out 1s infinite;'
+                ));
+                // 浮云
+                for (let i = 0; i < 3; i++) {
+                    container.appendChild(el(
+                        'z-index:4;left:' + (5 + i * 35) + '%;top:' + (12 + i * 14) + '%;' +
+                        'width:' + (45 + i * 18) + 'px;height:' + (12 + i * 3) + 'px;' +
+                        'background:radial-gradient(ellipse,rgba(200,210,230,0.25) 0%,transparent 70%);' +
+                        'border-radius:50%;' +
+                        'animation:cloudFloat ' + (8 + i * 3) + 's linear ' + (i * 2.5) + 's infinite;'
+                    ));
+                }
+            }
+
+            // ============================================
+            // 场景 5：端午 — 龙舟竞渡碧波间
+            // ============================================
+            else if (festivalType === 'dragonboat') {
+                container.style.background = 'linear-gradient(180deg, #4a90d9 0%, #5ba0e8 15%, #87ceeb 35%, #a8e6cf 65%, #2e8b57 85%, #1a5c3a 100%)';
+                // 太阳
+                container.appendChild(el(
+                    'z-index:0;right:15%;top:10%;width:35px;height:35px;border-radius:50%;' +
+                    'background:radial-gradient(circle,#fffde7,#ffd54f 60%,rgba(255,200,50,0.2));' +
+                    'box-shadow:0 0 25px rgba(255,240,150,0.5);'
+                ));
+                // 远山
+                addSilhouette(1, '30%', 'height:22%;background:linear-gradient(180deg,transparent,#1a6b3a);border-radius:60% 50% 0 0;left:-8%;right:-8%;');
+                addSilhouette(1, '28%', 'height:18%;background:linear-gradient(180deg,transparent,#145a2e);border-radius:45% 65% 0 0;left:30%;');
+                // 河岸
+                addSilhouette(2, '5%', 'height:28%;background:linear-gradient(180deg,transparent,#0d3d1f 40%,#0a2a14);left:-5%;right:20%;border-radius:0 80% 0 0;');
+                addSilhouette(2, '5%', 'height:24%;background:linear-gradient(180deg,transparent,#0d3d1f 40%,#0a2a14);right:-5%;left:30%;border-radius:80% 0 0 0;');
+                // 水面
+                for (let i = 0; i < 5; i++) {
+                    container.appendChild(el(
+                        'z-index:3;bottom:' + (i * 10) + 'px;left:0;right:0;height:14px;' +
+                        'background:linear-gradient(90deg,' +
+                        'rgba(255,255,255,0) 0%,rgba(255,255,255,0.06) 30%,' +
+                        'rgba(255,255,255,0.14) 55%,rgba(255,255,255,0.06) 75%,' +
+                        'rgba(255,255,255,0) 100%);' +
+                        'border-radius:45%;' +
+                        'animation:waveShift ' + (4 + i * 0.8) + 's linear ' + (i * 0.5) + 's infinite;'
+                    ));
+                }
+                // 水面反光
+                for (let i = 0; i < 10; i++) {
+                    container.appendChild(el(
+                        'z-index:4;left:' + (5 + Math.random() * 85) + '%;bottom:' + (8 + Math.random() * 28) + 'px;' +
+                        'width:2px;height:2px;border-radius:50%;background:#fff;' +
+                        'animation:starTwinkleGif ' + (0.8 + Math.random() * 1.5) + 's ease-in-out ' + Math.random() + 's infinite;'
+                    ));
+                }
+                // 龙舟（CSS绘制）
+                for (let bi = 0; bi < 2; bi++) {
+                    const bx = 10 + bi * 38;
+                    const by = 22 + bi * 6;
+                    // 船身
+                    const boat = el(
+                        'z-index:5;left:' + bx + '%;bottom:' + by + 'px;' +
+                        'width:56px;height:8px;' +
+                        'background:linear-gradient(90deg,#8b4513 5%,#c0392b 15%,#e74c3c 50%,#c0392b 85%,#8b4513);' +
+                        'border-radius:0 60% 60% 0 / 0 40% 40% 0;' +
+                        'animation:lanternRise ' + (2 + bi * 0.6) + 's ease-in-out ' + bi * 0.9 + 's infinite;'
+                    );
+                    container.appendChild(boat);
+                    // 龙头
+                    const head = el(
+                        'z-index:5;left:' + (bx - 5) + '%;bottom:' + (by + 1) + 'px;' +
+                        'width:10px;height:7px;' +
+                        'background:radial-gradient(ellipse at 30% 50%,#ffd700 0%,#e67e22 60%,#8b4513);' +
+                        'border-radius:0 60% 40% 50%;' +
+                        'animation:lanternRise ' + (2 + bi * 0.6) + 's ease-in-out ' + bi * 0.9 + 's infinite;'
+                    );
+                    container.appendChild(head);
+                    // 桨手
+                    for (let p = 0; p < 4; p++) {
+                        container.appendChild(el(
+                            'z-index:6;left:' + (bx + 12 + p * 10) + '%;bottom:' + (by + 7) + 'px;' +
+                            'width:2px;height:12px;background:#6b3a1f;border-radius:1px;' +
+                            'animation:rainFall ' + (0.6 + p * 0.15) + 's ease-in-out ' + (bi * 0.4 + p * 0.1) + 's infinite;' +
+                            'transform-origin:top center;'
+                        ));
+                    }
+                }
+            }
+
+            // ============================================
+            // 场景 6：重阳 — 登高望秋色
+            // ============================================
+            else if (festivalType === 'chongyang') {
+                container.style.background = 'linear-gradient(180deg, #5b8cb8 0%, #87b8d8 15%, #c8d8e8 30%, #f0d878 55%, #e8a840 80%, #c07020 100%)';
+                // 远山（层层叠叠）
+                addSilhouette(0, '18%', 'height:22%;background:linear-gradient(180deg,transparent,rgba(180,160,140,0.5));border-radius:55% 50% 0 0;left:-10%;right:-10%;');
+                addSilhouette(0, '14%', 'height:20%;background:linear-gradient(180deg,transparent,rgba(160,120,80,0.6));border-radius:40% 65% 0 0;left:20%;');
+                // 秋树（前景大）
+                const tree = addSilhouette(2, '10%', 'left:10%;');
+                tree.innerHTML = `
+                    <div style="position:absolute;bottom:0;left:40%;width:8px;height:30%;background:#5a3a1a;border-radius:2px;"></div>
+                    <div style="position:absolute;bottom:25%;left:10%;width:50px;height:45px;background:radial-gradient(ellipse,#e8a840 0%,#c07020 50%,#8b4513 80%);border-radius:50% 55% 45% 50%;"></div>
+                    <div style="position:absolute;bottom:30%;left:0;width:35px;height:30px;background:radial-gradient(ellipse,#f0c040 0%,#d48020 60%,#a05010 90%);border-radius:45% 50% 50% 45%;"></div>
+                `;
+                // 另一棵树
+                const tree2 = addSilhouette(2, '12%', 'right:15%;');
+                tree2.innerHTML = `
+                    <div style="position:absolute;bottom:0;left:45%;width:6px;height:25%;background:#4a2a10;border-radius:2px;"></div>
+                    <div style="position:absolute;bottom:22%;left:5%;width:40px;height:38px;background:radial-gradient(ellipse,#e07030 0%,#b04020 60%,#6b2010 90%);border-radius:48% 52% 48% 52%;"></div>
+                `;
+                // 山径（上山小路）
+                container.appendChild(el(
+                    'z-index:1;left:35%;bottom:10%;width:3px;height:28%;' +
+                    'background:linear-gradient(180deg,transparent,rgba(180,140,100,0.5),rgba(200,160,120,0.3));' +
+                    'transform:rotate(-5deg);border-radius:1px;'
+                ));
+                // 飘落叶
+                const leafEmojis = ['🍂', '🍁', '🍂', '🍁', '🍃'];
+                for (let i = 0; i < 18; i++) {
+                    const leafEl = el(
+                        'z-index:3;left:' + Math.random() * 95 + '%;top:' + (-5 - Math.random() * 12) + '%;' +
+                        'font-size:' + (14 + Math.random() * 18) + 'px;' +
+                        'animation:leafDrift ' + (4 + Math.random() * 7) + 's ease-in-out ' + Math.random() * 5 + 's infinite;'
+                    );
+                    leafEl.textContent = leafEmojis[i % leafEmojis.length];
+                    container.appendChild(leafEl);
+                }
+                // 前景菊花
+                for (let i = 0; i < 5; i++) {
+                    const cm = el(
+                        'z-index:3;left:' + (5 + i * 20) + '%;bottom:' + (6 + (i % 2) * 5) + '%;' +
+                        'font-size:' + (14 + (i % 3) * 4) + 'px;' +
+                        'animation:starTwinkleGif ' + (2.5 + Math.random()) + 's ease-in-out ' + (i * 0.4) + 's infinite;'
+                    );
+                    cm.textContent = '🌼';
+                    container.appendChild(cm);
+                }
+            }
+
+            // ============================================
+            // 场景 7：清明 — 春雨山色
+            // ============================================
+            else if (festivalType === 'qingming') {
+                container.style.background = 'linear-gradient(180deg, #a8c8b8 0%, #b8d4c4 20%, #c8dcc8 45%, #8fbc8f 70%, #5a8f5a 100%)';
+                // 远山（水墨感）
+                addSilhouette(0, '20%', 'height:20%;background:linear-gradient(180deg,transparent,rgba(100,130,100,0.4));border-radius:55% 50% 0 0;left:-10%;right:-10%;');
+                addSilhouette(0, '18%', 'height:16%;background:linear-gradient(180deg,transparent,rgba(80,110,80,0.5));border-radius:40% 60% 0 0;left:25%;right:-5%;');
+                // 雾
+                container.appendChild(el(
+                    'z-index:1;left:0;right:0;bottom:20%;height:35%;' +
+                    'background:linear-gradient(180deg,transparent,rgba(190,210,195,0.2) 30%,rgba(180,200,185,0.25) 60%,transparent);'
+                ));
+                // 柳树枝条（从上方垂下）
+                for (let i = 0; i < 4; i++) {
+                    const willow = el(
+                        'z-index:3;left:' + (12 + i * 24) + '%;top:0;width:2px;height:35%;' +
+                        'background:linear-gradient(180deg,rgba(120,160,100,0.6),rgba(150,190,130,0.3),transparent);' +
+                        'border-radius:0 0 50% 50%;' +
+                        'animation:lanternSwing ' + (3 + i * 0.5) + 's ease-in-out ' + (i * 0.4) + 's infinite;' +
+                        'transform-origin:top center;'
+                    );
+                    container.appendChild(willow);
+                }
+                // 细雨
+                for (let i = 0; i < 25; i++) {
+                    container.appendChild(el(
+                        'z-index:4;left:' + Math.random() * 100 + '%;top:' + (-2 - Math.random() * 8) + '%;' +
+                        'width:1px;height:' + (8 + Math.random() * 16) + 'px;' +
+                        'background:linear-gradient(180deg,transparent,rgba(180,200,210,0.5));' +
+                        'animation:rainFall ' + (0.5 + Math.random() * 0.7) + 's linear ' + Math.random() * 1.5 + 's infinite;'
+                    ));
+                }
+                // 地面花草
+                for (let i = 0; i < 8; i++) {
+                    const plant = el(
+                        'z-index:2;left:' + (3 + i * 12) + '%;bottom:' + (5 + (i % 3) * 4) + '%;' +
+                        'font-size:' + (10 + (i % 4) * 3) + 'px;' +
+                        'animation:floatUp ' + (2 + Math.random() * 2) + 's ease-in-out ' + (i * 0.3) + 's infinite;'
+                    );
+                    plant.textContent = ['🌱', '🌿', '🌾', '🌱'][i % 4];
+                    container.appendChild(plant);
+                }
+                // 石板小径
+                for (let i = 0; i < 4; i++) {
+                    container.appendChild(el(
+                        'z-index:1;left:' + (20 + i * 16) + '%;bottom:' + (7 - i * 0.5) + '%;' +
+                        'width:14px;height:4px;border-radius:40%;' +
+                        'background:rgba(150,160,150,0.25);' +
+                        'animation:rippleWide ' + (2 + i) + 's ease-in-out ' + (i * 0.6) + 's infinite;'
+                    ));
+                }
+            }
+
+            // ========== 场景 8：建党节 (7/1) — 红旗飘扬 ==========
+            else if (festivalType === 'jiandang') {
+                container.style.background = 'linear-gradient(180deg, #c0392b 0%, #d44040 30%, #e74c3c 60%, #f9d423 100%)';
+                // 旗帜
+                const flag = el('z-index:2;left:10%;top:5%;width:80%;height:55%;' +
+                    'background:linear-gradient(180deg,#c0392b 0%,#e74c3c 40%,#c0392b 100%);' +
+                    'border-radius:3px;');
+                container.appendChild(flag);
+                // 党徽(简化)
+                const emblem = el('z-index:3;left:38%;top:12%;font-size:48px;color:#ffd700;' +
+                    'animation:moonGlow 3s ease-in-out infinite;');
+                emblem.textContent = '☭';
+                container.appendChild(emblem);
+                // 金色光芒
+                for (let i = 0; i < 12; i++) {
+                    const ray = el('z-index:1;left:50%;top:30%;width:2px;height:50px;' +
+                        'background:rgba(255,215,0,0.2);' +
+                        'transform:rotate(' + (i * 30) + 'deg);transform-origin:bottom center;' +
+                        'animation:glowPulse ' + (1.5 + Math.random()) + 's ease-in-out ' + (i * 0.2) + 's infinite;');
+                    container.appendChild(ray);
+                }
+            }
+
+            // ========== 场景 9：建军节 (8/1) — 军旗猎猎 ==========
+            else if (festivalType === 'jianjun') {
+                container.style.background = 'linear-gradient(180deg, #2d5016 0%, #4a7a28 30%, #6ba341 50%, #8bc34a 80%, #c5e1a5 100%)';
+                // 红色军旗
+                const mflag = el('z-index:2;left:15%;top:8%;width:70%;height:40%;' +
+                    'background:linear-gradient(180deg,#c0392b,#e74c3c);border-radius:2px;');
+                container.appendChild(mflag);
+                // 五角星
+                const star = el('z-index:3;left:42%;top:15%;font-size:36px;color:#ffd700;' +
+                    'animation:moonGlow 2.5s ease-in-out infinite;');
+                star.textContent = '★';
+                container.appendChild(star);
+                // 军绿色条带
+                for (let i = 0; i < 3; i++) {
+                    const stripe = el('z-index:1;bottom:' + (10 + i * 8) + '%;left:0;right:0;height:3px;' +
+                        'background:rgba(255,255,255,0.1);');
+                    container.appendChild(stripe);
+                }
+            }
+
+            // ========== 场景 10：教师节 (9/10) — 桃李芬芳 ==========
+            else if (festivalType === 'jiaoshi') {
+                container.style.background = 'linear-gradient(180deg, #2e7d32 0%, #388e3c 25%, #81c784 60%, #c8e6c9 100%)';
+                // 黑板
+                const board = el('z-index:1;left:8%;top:8%;width:84%;height:50%;' +
+                    'background:linear-gradient(180deg,#2c5f2d,#3e7d3f);border-radius:4px;' +
+                    'border:3px solid #8d6e63;box-shadow:inset 0 2px 8px rgba(0,0,0,0.3);');
+                container.appendChild(board);
+                // 粉笔字
+                const chalk = el('z-index:2;left:22%;top:20%;font-size:20px;color:rgba(255,255,255,0.85);' +
+                    'font-family:serif;animation:starTwinkleGif 3s ease-in-out infinite;');
+                chalk.textContent = '✎ 师恩难忘';
+                container.appendChild(chalk);
+                // 书本
+                for (let i = 0; i < 3; i++) {
+                    const book = el('z-index:2;left:' + (15 + i * 10) + '%;bottom:8%;' +
+                        'width:14px;height:10px;' +
+                        'background:linear-gradient(180deg,#' + ['e74c3c','3498db','f39c12'][i] + ',#' + ['c0392b','2980b9','e67e22'][i] + ');' +
+                        'border-radius:1px 2px 2px 1px;');
+                    container.appendChild(book);
+                }
+                // 小花
+                for (let i = 0; i < 5; i++) {
+                    const flower = el('z-index:3;left:' + (8 + i * 20) + '%;bottom:5%;font-size:14px;' +
+                        'animation:floatUp ' + (2 + i) + 's ease-in-out ' + (i * 0.4) + 's infinite;');
+                    flower.textContent = ['🌷', '🌸', '🌻', '🌺', '💐'][i];
+                    container.appendChild(flower);
+                }
+            }
+
+            // ========== 场景 11：国庆节 (10/1) — 举国欢庆 ==========
+            else if (festivalType === 'guoqing') {
+                container.style.background = 'linear-gradient(180deg, #c0392b 0%, #d44040 20%, #e74c3c 50%, #f39c12 80%, #ffeaa7 100%)';
+                // 天安门轮廓
+                const tiananmen = el('z-index:2;left:10%;bottom:10%;width:80%;height:30%;');
+                tiananmen.innerHTML = `
+                    <div style="position:absolute;bottom:0;left:0;right:0;height:50%;background:#8b2020;border-radius:3px 3px 0 0;"></div>
+                    <div style="position:absolute;bottom:45%;left:15%;width:20%;height:40%;background:#8b2020;border-radius:2px 2px 0 0;"></div>
+                    <div style="position:absolute;bottom:45%;right:15%;width:20%;height:40%;background:#8b2020;border-radius:2px 2px 0 0;"></div>
+                    <div style="position:absolute;bottom:60%;left:38%;width:24%;height:20%;background:#a03030;border-radius:3px 3px 0 0;">
+                        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:20px;color:#ffd700;">🇨🇳</div>
+                    </div>`;
+                container.appendChild(tiananmen);
+                // 烟花
+                for (let g = 0; g < 6; g++) {
+                    const cx = 10 + g * 16;
+                    const cy = 8 + (g % 3) * 14;
+                    for (let i = 0; i < 15; i++) {
+                        const angle = (i / 15) * Math.PI * 2;
+                        const dist = 30 + Math.random() * 50;
+                        container.appendChild(el(
+                            'z-index:4;left:' + cx + '%;top:' + cy + '%;' +
+                            'width:' + (1.5 + Math.random() * 2) + 'px;height:' + (1.5 + Math.random() * 2) + 'px;' +
+                            'border-radius:50%;background:' + ['#ffd700', '#ff4444', '#fff'][i % 3] + ';' +
+                            '--bx:' + Math.cos(angle) * dist + 'px;--by:' + Math.sin(angle) * dist + 'px;' +
+                            'animation:burstParticle ' + (1 + Math.random() * 1.5) + 's ease-out ' + (g * 0.2 + Math.random() * 0.5) + 's infinite;' +
+                            'box-shadow:0 0 ' + (2 + Math.random() * 4) + 'px currentColor;'
+                        ));
+                    }
+                }
+                // 金色光点
+                for (let i = 0; i < 15; i++) {
+                    container.appendChild(el(
+                        'z-index:3;left:' + Math.random() * 100 + '%;top:' + (40 + Math.random() * 55) + '%;' +
+                        'width:2px;height:2px;border-radius:50%;background:#ffd700;' +
+                        'animation:floatUp ' + (2 + Math.random() * 2) + 's ease-in ' + Math.random() * 3 + 's infinite;'
+                    ));
+                }
+            }
+
+            // ========== 场景 12：圣诞节 (12/25) — 雪夜圣诞 ==========
+            else if (festivalType === 'shengdan') {
+                container.style.background = 'linear-gradient(180deg, #0a1628 0%, #1a2a4a 25%, #2c3e6e 55%, #4a6090 85%, #8baac8 100%)';
+                // 星空
+                for (let i = 0; i < 20; i++) {
+                    container.appendChild(el(
+                        'z-index:1;left:' + Math.random() * 100 + '%;top:' + Math.random() * 50 + '%;' +
+                        'width:' + (1 + Math.random() * 2) + 'px;height:' + (1 + Math.random() * 2) + 'px;' +
+                        'border-radius:50%;background:#fff;' +
+                        'animation:starTwinkleGif ' + (1.5 + Math.random() * 2) + 's ease-in-out ' + Math.random() + 's infinite;'
+                    ));
+                }
+                // 圣诞树
+                const tree = el('z-index:3;right:12%;bottom:5%;');
+                tree.innerHTML = `
+                    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:8px;height:14px;background:#5a3a1a;border-radius:2px;"></div>
+                    <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-bottom:28px solid #2d7d2d;"></div>
+                    <div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:22px solid #388e3c;"></div>
+                    <div style="position:absolute;bottom:46px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:16px solid #43a047;"></div>
+                    <div style="position:absolute;bottom:54px;left:50%;transform:translateX(-50%);font-size:14px;">⭐</div>`;
+                container.appendChild(tree);
+                // 礼物
+                for (let i = 0; i < 3; i++) {
+                    const gift = el('z-index:2;left:' + (18 + i * 10) + '%;bottom:5%;' +
+                        'width:12px;height:12px;' +
+                        'background:' + ['#c0392b', '#e67e22', '#8e44ad'][i] + ';border-radius:2px;');
+                    container.appendChild(gift);
+                    const bow = el('z-index:3;left:' + (21 + i * 10) + '%;bottom:16%;font-size:8px;');
+                    bow.textContent = '🎀';
+                    container.appendChild(bow);
+                }
+                // 雪花
+                for (let i = 0; i < 20; i++) {
+                    const snow = el('z-index:4;left:' + Math.random() * 100 + '%;top:' + (-5 - Math.random() * 10) + '%;' +
+                        'font-size:' + (8 + Math.random() * 10) + 'px;color:#fff;opacity:0.8;' +
+                        'animation:snowfall ' + (4 + Math.random() * 6) + 's linear ' + Math.random() * 5 + 's infinite;');
+                    snow.textContent = ['❄', '❅', '✦'][Math.floor(Math.random() * 3)];
+                    container.appendChild(snow);
+                }
+            }
+
+            // ---- 默认：古纸纹理 ----
+            else {
+                container.style.background = 'linear-gradient(180deg, #f5f0e8 0%, #faf7f0 40%, #f0e8d8 70%, #f5ecd7 100%)';
+            }
+        }
+
+
+        /**
+         * 显示黄历悬浮面板
+         */
+        function showHuangliPopup(solarYear, solarMonth, solarDay) {
+            const overlay = document.getElementById('huangliOverlay');
+            const hl = getHuangliData(solarYear, solarMonth, solarDay);
+            const lunar = hl.lunar;
+
+            // 星期
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const dateObj = new Date(solarYear, solarMonth, solarDay);
+            const weekday = weekdays[dateObj.getDay()];
+
+            // 公历日期标题
+            document.getElementById('hlSolarDate').textContent =
+                `${solarYear}年${solarMonth + 1}月${solarDay}日 ${weekday}`;
+
+            // 农历日期
+            if (lunar) {
+                const leapP = lunar.isLeap ? '闰' : '';
+                document.getElementById('hlLunarDate').textContent =
+                    `农历 ${lunar.yearName} ${leapP}${lunarMonthNames[lunar.lunarMonth]}${lunarDayNames[lunar.lunarDay]}`;
+            }
+
+            // 干支
+            document.getElementById('hlGanzhi').textContent =
+                `干支 ${hl.dayGZ.fullName}日 · 五行属${hl.wuXing}`;
+
+            // 宜忌
+            document.getElementById('hlYi').textContent = hl.yi.join('、') || '诸事不宜';
+            document.getElementById('hlJi').textContent = hl.ji.join('、') || '—';
+
+            // 冲煞
+            document.getElementById('hlChong').textContent =
+                `冲${hl.clash.chong}(${hl.dayGZ.fullName})煞${hl.clash.sha}`;
+
+            // 吉凶神
+            document.getElementById('hlJiShen').textContent = hl.jiShen.join('、');
+            document.getElementById('hlXiongShen').textContent = hl.xiongShen.join('、');
+
+            // 节日主题
+            const festival = getFestivalTheme(solarYear, solarMonth, solarDay);
+            const themeBg = document.getElementById('hlThemeBg');
+
+            if (festival) {
+                renderThemeBackground(themeBg, festival.type);
+                // 播发音效
+                playFestivalSound(festival.type);
+            } else {
+                renderThemeBackground(themeBg, 'default');
+            }
+
+            // 显示
+            overlay.style.display = 'flex';
+        }
+
+        function hideHuangliPopup() {
+            document.getElementById('huangliOverlay').style.display = 'none';
+        }
+
+        // ============================================================
+        // 十二、天气预报（Open-Meteo + GPS定位 + 城市选择）
+        //    数据源: api.open-meteo.com（免费无需密钥）
+        //    地理编码: nominatim.openstreetmap.org（免费无需密钥）
+        // ============================================================
+        let weatherCache = null;
+        let currentLocation = {
+            lat: 39.9042,
+            lon: 116.4074,
+            name: '北京',
+            country: '中国',
+            province: '华北平原'
+        };
+
+        function weatherCodeToEmoji(code) {
+            if (code === 0) return { icon: '☀️', label: '晴' };
+            if (code >= 1 && code <= 3) return { icon: '⛅', label: '多云' };
+            if (code >= 45 && code <= 48) return { icon: '🌫️', label: '雾' };
+            if (code >= 51 && code <= 57) return { icon: '🌧️', label: '小雨' };
+            if (code >= 61 && code <= 67) return { icon: '🌧️', label: '雨' };
+            if (code >= 71 && code <= 77) return { icon: '❄️', label: '雪' };
+            if (code >= 80 && code <= 82) return { icon: '🌧️', label: '阵雨' };
+            if (code >= 85 && code <= 86) return { icon: '🌨️', label: '暴雪' };
+            if (code >= 95 && code <= 99) return { icon: '⛈️', label: '雷雨' };
+            return { icon: '☁️', label: '阴' };
+        }
+
+        async function fetchWeatherData(lat, lon) {
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+
+            if (weatherCache && weatherCache.cacheKey === cacheKey &&
+                weatherCache.fetchDate === dateStr) {
+                return weatherCache.dateKeys;
+            }
+
+            try {
+                const url = 'https://api.open-meteo.com/v1/forecast' +
+                    `?latitude=${lat}&longitude=${lon}` +
+                    '&daily=weather_code,temperature_2m_max,temperature_2m_min' +
+                    '&timezone=auto&forecast_days=16';
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error('API error');
+                const data = await resp.json();
+                const dateKeys = {};
+                for (let i = 0; i < data.daily.time.length; i++) {
+                    dateKeys[data.daily.time[i]] = weatherCodeToEmoji(data.daily.weather_code[i]);
+                }
+                weatherCache = { dateKeys, fetchDate: dateStr, cacheKey };
+                return dateKeys;
+            } catch (e) {
+                console.warn('天气API失败', e);
+                return null;
+            }
+        }
+
+        function getWeather(solarYear, solarMonth, solarDay) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const target = new Date(solarYear, solarMonth, solarDay);
+            const diffDays = Math.floor((target - today) / 86400000);
+            if (diffDays < 0 || diffDays > 15) return null;
+            const dateKey = `${solarYear}-${String(solarMonth + 1).padStart(2, '0')}-${String(solarDay).padStart(2, '0')}`;
+            if (weatherCache && weatherCache.dateKeys && weatherCache.dateKeys[dateKey]) {
+                return weatherCache.dateKeys[dateKey];
+            }
+            return null;
+        }
+
+        async function refreshWeather() {
+            const loc = currentLocation;
+            document.getElementById('locationDisplay').textContent = '📍 ' + loc.name + ' 天气加载中…';
+            const data = await fetchWeatherData(loc.lat, loc.lon);
+            if (data) {
+                document.getElementById('locationDisplay').textContent = '📍 ' + loc.name;
+                renderCalendar();
+            } else {
+                document.getElementById('locationDisplay').textContent = '📍 ' + loc.name + ' (离线)';
+            }
+        }
+
+        // ---- GPS/北斗定位 ----
+        function requestGPSLocation() {
+            document.getElementById('citySubtitle').textContent = '正在获取GPS/北斗定位…';
+            if (!navigator.geolocation) {
+                alert('浏览器不支持GPS定位');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    try {
+                        const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`;
+                        const resp = await fetch(url);
+                        const data = await resp.json();
+                        const city = data.city || data.locality || data.principalSubdivision || '';
+                        const country = data.countryName || '';
+                        const province = data.principalSubdivision || '';
+                        currentLocation = { lat, lon, name: city || `${lat.toFixed(1)},${lon.toFixed(1)}`, country, province };
+                        updateClimateForLocation();
+                        document.getElementById('citySubtitle').textContent =
+                            `已定位: ${country} ${province} ${city} (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+                        document.getElementById('cityOverlay').style.display = 'none';
+                        refreshWeather();
+                    } catch (e) {
+                        currentLocation = { lat, lon, name: `${lat.toFixed(2)},${lon.toFixed(2)}`, country: '' };
+                        document.getElementById('cityOverlay').style.display = 'none';
+                        refreshWeather();
+                    }
+                },
+                (err) => {
+                    alert('GPS定位失败: ' + err.message + '\n请检查浏览器定位权限');
+                    document.getElementById('citySubtitle').textContent = '定位失败，请手动搜索城市';
+                }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        // ---- 城市搜索（Open-Meteo 地理编码，国内可访问） ----
+        async function searchCity(query) {
+            if (!query.trim()) return;
+            document.getElementById('citySearchResults').innerHTML =
+                '<div style="color:#aaa;padding:8px;">搜索中…</div>';
+            try {
+                const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=zh&format=json`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+                const results = data.results || [];
+                const container = document.getElementById('citySearchResults');
+                if (results.length === 0) {
+                    container.innerHTML = '<div style="color:#aaa;padding:8px;">未找到，请换关键词</div>';
+                    return;
+                }
+                container.innerHTML = results.map(r => {
+                    const name = r.name || '';
+                    const admin1 = r.admin1 || ''; // 省/州
+                    const country = r.country || '';
+                    const lat = parseFloat(r.latitude);
+                    const lon = parseFloat(r.longitude);
+                    const label = [name, admin1, country].filter(Boolean).join(', ');
+                    const safeLabel = label.replace(/'/g, "\\'");
+                    return `<div style="padding:6px 8px;cursor:pointer;border-bottom:1px solid #eee;font-size:12px;"
+                        onclick="selectCity(${lat},${lon},'${safeLabel}','${country.replace(/'/g,"\\'")}')"
+                        onmouseover="this.style.background='#f0e8d0'" onmouseout="this.style.background=''">
+                        📍 ${label} <span style="color:#aaa;">(${lat.toFixed(1)},${lon.toFixed(1)})</span>
+                      </div>`;
+                }).join('');
+            } catch (e) {
+                document.getElementById('citySearchResults').innerHTML =
+                    '<div style="color:#c0392b;padding:8px;">搜索失败: ' + e.message + '</div>';
+            }
+        }
+
+        function selectCity(lat, lon, name, country) {
+            currentLocation = { lat, lon, name, country, province: '' };
+            document.getElementById('cityOverlay').style.display = 'none';
+            updateClimateForLocation();
+            refreshWeather();
+        }
+
+        // ---- 初始化 ----
+        function initWeather() {
+            // 先立即用默认城市显示天气
+            refreshWeather();
+            // GPS 定位稍后尝试
+            tryAutoGPS();
+        }
+
+        async function tryAutoGPS() {
+            if (!navigator.geolocation) return;
+            const display = document.getElementById('locationDisplay');
+            display.textContent = '📍 定位中…';
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    console.log('GPS定位成功:', lat, lon);
+                    // 用 BigDataCloud 免费反向地理编码（国内可访问）
+                    let city = '';
+                    let country = '';
+                    let province = '';
+                    try {
+                        const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`;
+                        const resp = await fetch(url);
+                        const data = await resp.json();
+                        city = data.city || data.locality || data.principalSubdivision || '';
+                        country = data.countryName || '';
+                        province = data.principalSubdivision || '';
+                        console.log('BigDataCloud:', city, province, country);
+                    } catch (e1) {
+                        console.warn('BigDataCloud失败', e1);
+                    }
+                    if (city) {
+                        currentLocation = { lat, lon, name: city, country, province };
+                        refreshWeather();
+                        updateClimateForLocation();
+                    } else {
+                        display.textContent = `📍 ${lat.toFixed(1)},${lon.toFixed(1)}`;
+                    }
+                },
+                (err) => {
+                    console.warn('GPS失败:', err.message);
+                    display.textContent = '📍 北京';
+                }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        // ---- 省份/国家 → 气候区域映射 ----
+        function getClimateZone(province, country) {
+            // 中国省份映射
+            const chinaProvinceMap = {
+                '黑龙江': '东北', '吉林': '东北', '辽宁': '东北',
+                '北京': '华北', '天津': '华北', '河北': '华北', '山西': '华北', '内蒙古': '华北',
+                '山东': '华北', '河南': '华北',
+                '上海': '华东', '江苏': '华东', '浙江': '华东', '安徽': '华东',
+                '福建': '华东', '江西': '华东',
+                '湖北': '华中', '湖南': '华中',
+                '广东': '华南', '广西': '华南', '海南': '华南', '香港': '华南', '澳门': '华南',
+                '重庆': '西南', '四川': '西南', '贵州': '西南', '云南': '西南', '西藏': '西南',
+                '陕西': '西北', '甘肃': '西北', '青海': '西北', '宁夏': '西北', '新疆': '西北',
+                '台湾': '华东',
+            };
+            if (country && (country.includes('中华') || country.includes('中国') || country === 'China' || country === 'CN')) {
+                for (const [key, zone] of Object.entries(chinaProvinceMap)) {
+                    if (province && province.includes(key)) return zone;
+                }
+                return '华北'; // 默认
+            }
+            // 其他国家 → 粗略气候带
+            if (country) {
+                const coldCountries = ['俄罗斯', '加拿大', '冰岛', '挪威', '瑞典', '芬兰', 'Russia', 'Canada', 'Iceland'];
+                const tropicalCountries = ['泰国', '越南', '菲律宾', '印度尼西亚', '马来西亚', '新加坡', '印度', '巴西', 'Thailand', 'Vietnam', 'Philippines', 'Indonesia', 'Malaysia', 'Singapore', 'India', 'Brazil'];
+                const southernCountries = ['澳大利亚', '新西兰', '阿根廷', '智利', '南非', 'Australia', 'New Zealand', 'Argentina', 'Chile'];
+                for (const c of coldCountries) { if (country.includes(c)) return '寒带'; }
+                for (const c of tropicalCountries) { if (country.includes(c)) return '热带'; }
+                for (const c of southernCountries) { if (country.includes(c)) return '南温带'; }
+                return '温带';
+            }
+            return '华北';
+        }
+
+        function cleanProvinceName(name) {
+            if (!name) return '';
+            return name.replace(/省$/, '').replace(/自治区$/, '')
+                .replace(/壮族自治区$/, '').replace(/回族自治区$/, '')
+                .replace(/维吾尔自治区$/, '').replace(/特别行政区$/, '')
+                .replace(/市$/, '');
+        }
+
+        function updateClimateForLocation() {
+            const prov = currentLocation.province || '';
+            const country = currentLocation.country || '';
+            const isCN = country.includes('中华') || country.includes('中国') ||
+                country === 'China' || country === 'CN';
+            const zone = getClimateZone(prov, country);
+            let displayName;
+            if (isCN) {
+                displayName = cleanProvinceName(prov) || '华北平原';
+            } else {
+                displayName = country || '海外';
+            }
+            window._climateZone = zone;
+            window._climateZoneName = displayName;
+            console.log('🌍 气候更新: prov=' + prov + ' country=' + country +
+                ' isCN=' + isCN + ' display=' + displayName);
+        }
+
+        // 暴露 selectCity 到全局（onclick 需要）
+        window.selectCity = selectCity;
+
+        // ============================================================
+        // 十三、渲染日历网格
+        // ============================================================
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // 更新标题
+            document.getElementById('monthYearTitle').textContent =
+                `${year}年 ${month + 1}月`;
+
+            // 更新四季背景
+            updateSeasonBackground();
+
+            // 计算日历所需数据
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDayOfWeek = firstDay.getDay();
+            const daysInMonth = lastDay.getDate();
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const totalCells = 42; // 6 行 × 7 列
+
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('day-cell');
+
+                let cellDate, cellMonth, cellYear, isOtherMonth = false;
+
+                if (i < startDayOfWeek) {
+                    const dayNum = prevMonthLastDay - startDayOfWeek + i + 1;
+                    cellDate = dayNum;
+                    cellMonth = month - 1;
+                    cellYear = year;
+                    if (cellMonth < 0) { cellMonth = 11;
+                        cellYear--; }
+                    isOtherMonth = true;
+                } else if (i - startDayOfWeek >= daysInMonth) {
+                    const dayNum = i - startDayOfWeek - daysInMonth + 1;
+                    cellDate = dayNum;
+                    cellMonth = month + 1;
+                    cellYear = year;
+                    if (cellMonth > 11) { cellMonth = 0;
+                        cellYear++; }
+                    isOtherMonth = true;
+                } else {
+                    cellDate = i - startDayOfWeek + 1;
+                    cellMonth = month;
+                    cellYear = year;
+                }
+
+                const dateKey =
+                    `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(cellDate).padStart(2, '0')}`;
+
+                // 显示公历日期数字
+                cell.appendChild(document.createTextNode(cellDate));
+
+                if (isOtherMonth) {
+                    cell.classList.add('other-month');
+                }
+                if (dateKey === todayStr) {
+                    cell.classList.add('today');
+                }
+                if (dateKey === selectedDate) {
+                    cell.classList.add('selected');
+                }
+
+                // ---- 农历日期 ----
+                if (!isOtherMonth) {
+                    const lunarData = getLunarDateText(cellYear, cellMonth, cellDate);
+                    if (lunarData && lunarData.text) {
+                        const lunarSpan = document.createElement('span');
+                        lunarSpan.classList.add('lunar-date');
+                        if (lunarData.isFirstDay) lunarSpan.classList.add('lunar-first-day');
+                        if (lunarData.isLeap) lunarSpan.classList.add('lunar-leap');
+                        lunarSpan.textContent = lunarData.text;
+                        cell.appendChild(lunarSpan);
+                    }
+                }
+
+                // ---- 天气图标（当日~+15日） ----
+                if (!isOtherMonth) {
+                    const weather = getWeather(cellYear, cellMonth, cellDate);
+                    if (weather) {
+                        const wSpan = document.createElement('span');
+                        wSpan.classList.add('weather-icon');
+                        wSpan.textContent = weather.icon;
+                        wSpan.title = weather.label;
+                        cell.appendChild(wSpan);
+                    }
+                }
+
+                // 事件小圆点
+                if (events[dateKey] && events[dateKey].length > 0 && !isOtherMonth) {
+                    const dot = document.createElement('span');
+                    dot.classList.add('event-dot');
+                    cell.appendChild(dot);
+                }
+
+                // 节日标签
+                const holiday = getHoliday(cellYear, cellMonth, cellDate);
+                if (holiday && !isOtherMonth) {
+                    const label = document.createElement('span');
+                    label.classList.add('holiday-label');
+                    label.textContent = holiday;
+                    cell.appendChild(label);
+                }
+
+                if (!isOtherMonth) {
+                    cell.addEventListener('click', () => selectDate(dateKey));
+                    cell.dataset.dateKey = dateKey;
+                }
+
+                grid.appendChild(cell);
+            }
+        }
+
+        // ============================================================
+        // 十三、日期选择 & 事件管理
+        // ============================================================
+        function selectDate(dateKey) {
+            selectedDate = dateKey;
+            updateSelectedDateLabel(dateKey);
+            renderCalendar();
+            renderEventList();
+
+            // 显示黄历悬浮面板
+            const [y, m, d] = dateKey.split('-').map(Number);
+            showHuangliPopup(y, m - 1, d);
+        }
+
+        /**
+         * 更新事件面板的日期标签，同时显示公历和农历
+         */
+        function updateSelectedDateLabel(dateKey) {
+            const label = document.getElementById('selectedDateLabel');
+            if (!dateKey) {
+                label.textContent = '点击日期';
+                return;
+            }
+
+            const [y, m, d] = dateKey.split('-').map(Number);
+            const lunar = solarToLunar(y, m - 1, d);
+            if (lunar) {
+                const leapPrefix = lunar.isLeap ? '闰' : '';
+                const lunarStr = `${lunar.yearName} ${leapPrefix}${lunarMonthNames[lunar.lunarMonth]}${lunarDayNames[lunar.lunarDay]}`;
+                label.textContent = `${dateKey}（${lunarStr}）`;
+            } else {
+                label.textContent = dateKey;
+            }
+        }
+
+        function renderEventList() {
+            const listEl = document.getElementById('eventList');
+            listEl.innerHTML = '';
+
+            if (!selectedDate) {
+                listEl.innerHTML = '<li style="color:#aaa;">请先点击日历上的日期</li>';
+                return;
+            }
+
+            const dateEvents = events[selectedDate] || [];
+
+            if (dateEvents.length === 0) {
+                listEl.innerHTML = '<li style="color:#aaa;">暂无待办事项，输入后点击添加~</li>';
+                return;
+            }
+
+            dateEvents.forEach((eventText, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${eventText}</span>
+                    <button class="delete-event-btn" data-index="${index}" title="删除">✕</button>
+                `;
+                listEl.appendChild(li);
+            });
+
+            listEl.querySelectorAll('.delete-event-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteEvent(selectedDate, parseInt(this.dataset.index));
+                });
+            });
+        }
+
+        function addEvent() {
+            const input = document.getElementById('eventInput');
+            const text = input.value.trim();
+
+            if (!text) { alert('请输入待办事项内容~'); return; }
+            if (!selectedDate) { alert('请先在日历上点击一个日期！'); return; }
+
+            if (!events[selectedDate]) events[selectedDate] = [];
+            events[selectedDate].push(text);
+            saveEvents();
+            input.value = '';
+            input.focus();
+            renderCalendar();
+            renderEventList();
+        }
+
+        function deleteEvent(dateKey, index) {
+            if (events[dateKey]) {
+                events[dateKey].splice(index, 1);
+                if (events[dateKey].length === 0) delete events[dateKey];
+                saveEvents();
+                renderCalendar();
+                renderEventList();
+            }
+        }
+
+        // ============================================================
+        // 十四、月份切换 & 回到今天
+        // ============================================================
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            hideHuangliPopup();
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            selectedDate = null;
+            updateSelectedDateLabel(null);
+            hideHuangliPopup();
+            renderCalendar();
+            renderEventList();
+        }
+
+        // ============================================================
+        // 十五、六爻卜卦模块
+        // ============================================================
+
+        // ---- 64 卦数据（King Wen 序） ----
+        // 每个卦: { pattern: 6位二进制(1=阳0=阴,从下往上), name, upper, lower, judgment, interpretation }
+        const HEXAGRAMS = [
+            { pattern: 0b111111, num: 1, name: '乾为天', upper: '乾', lower: '乾',
+                judgment: '元亨利贞', interp: '大吉之卦，如龙行天。诸事亨通，宜积极进取，但切记刚极易折，居安思危。' },
+            { pattern: 0b000000, num: 2, name: '坤为地', upper: '坤', lower: '坤',
+                judgment: '元亨，利牝马之贞', interp: '柔顺承载，厚德载物。宜顺势而为，以柔克刚，守静待时则吉。' },
+            { pattern: 0b010001, num: 3, name: '水雷屯', upper: '坎', lower: '震',
+                judgment: '元亨利贞，勿用有攸往', interp: '万物初生，艰难起步。如种子破土，宜耐心耕耘，不宜冒进。' },
+            { pattern: 0b100010, num: 4, name: '山水蒙', upper: '艮', lower: '坎',
+                judgment: '亨，匪我求童蒙', interp: '蒙昧待启，如幼童求学。宜虚心请教，不可自以为是，启蒙则吉。' },
+            { pattern: 0b010111, num: 5, name: '水天需', upper: '坎', lower: '乾',
+                judgment: '有孚，光亨，贞吉', interp: '等待时机，如云聚待雨。凡事需耐心守候，时机一到自然成。' },
+            { pattern: 0b111010, num: 6, name: '天水讼', upper: '乾', lower: '坎',
+                judgment: '有孚窒惕，中吉终凶', interp: '争讼之象，宜和解不宜纠缠。退一步海阔天空，见好就收。' },
+            { pattern: 0b000010, num: 7, name: '地水师', upper: '坤', lower: '坎',
+                judgment: '贞，丈人吉，无咎', interp: '统兵出征，需师出有名。凡事以正为先，得道多助，失道寡助。' },
+            { pattern: 0b010000, num: 8, name: '水地比', upper: '坎', lower: '坤',
+                judgment: '吉，原筮元永贞', interp: '亲附和合，如水流归地。人际关系和谐，宜团结协作，共同进退。' },
+            { pattern: 0b110111, num: 9, name: '风天小畜', upper: '巽', lower: '乾',
+                judgment: '亨，密云不雨', interp: '积蓄待发，如云聚未雨。小有积蓄但尚未大成，继续积累必有收获。' },
+            { pattern: 0b111011, num: 10, name: '天泽履', upper: '乾', lower: '兑',
+                judgment: '履虎尾，不咥人，亨', interp: '如履虎尾，谨慎行事。虽处险境但能化险为夷，小心驶得万年船。' },
+            { pattern: 0b000111, num: 11, name: '地天泰', upper: '坤', lower: '乾',
+                judgment: '小往大来，吉亨', interp: '天地交泰，万物通泰。大吉大利，时运亨通，事业顺遂，心情舒畅。' },
+            { pattern: 0b111000, num: 12, name: '天地否', upper: '乾', lower: '坤',
+                judgment: '否之匪人，不利君子贞', interp: '天地闭塞，万事不顺。宜韬光养晦，静待时机，不宜大动干戈。' },
+            { pattern: 0b111101, num: 13, name: '天火同人', upper: '乾', lower: '离',
+                judgment: '同人于野，亨', interp: '志同道合，同心协力。利于合作共赢，广结善缘，众志成城。' },
+            { pattern: 0b101111, num: 14, name: '火天大有', upper: '离', lower: '乾',
+                judgment: '元亨', interp: '大丰收，富足丰盈。万事亨通，如日中天，宜分享成果，广施善行。' },
+            { pattern: 0b000100, num: 15, name: '地山谦', upper: '坤', lower: '艮',
+                judgment: '亨，君子有终', interp: '谦虚受益，骄傲招损。满招损谦受益，保持谦逊则事事顺遂。' },
+            { pattern: 0b001000, num: 16, name: '雷地豫', upper: '震', lower: '坤',
+                judgment: '利建侯行师', interp: '愉悦和乐，如春雷唤醒大地。宜顺势而动，但不可过度享乐。' },
+            { pattern: 0b011001, num: 17, name: '泽雷随', upper: '兑', lower: '震',
+                judgment: '元亨利贞，无咎', interp: '随顺时势，灵活应变。如流水随形，随机而变则无往不利。' },
+            { pattern: 0b100110, num: 18, name: '山风蛊', upper: '艮', lower: '巽',
+                judgment: '元亨，利涉大川', interp: '积弊待除，拨乱反正。发现问题即需整顿，革故鼎新则吉。' },
+            { pattern: 0b000011, num: 19, name: '地泽临', upper: '坤', lower: '兑',
+                judgment: '元亨利贞，至于八月有凶', interp: '居高临下，亲临视察。宜深入了解情况，但须知盛极而衰。' },
+            { pattern: 0b110000, num: 20, name: '风地观', upper: '巽', lower: '坤',
+                judgment: '盥而不荐，有孚颙若', interp: '观察审视，如风吹大地。宜静观其变，深思熟虑后再行动。' },
+            { pattern: 0b101001, num: 21, name: '火雷噬嗑', upper: '离', lower: '震',
+                judgment: '亨，利用狱', interp: '咬合决断，如雷电交加。宜果断决策，排除障碍，惩治奸邪。' },
+            { pattern: 0b100101, num: 22, name: '山火贲', upper: '艮', lower: '离',
+                judgment: '亨，小利有攸往', interp: '文饰之美，如山间晚霞。宜注重外在修饰，但不可华而不实。' },
+            { pattern: 0b100000, num: 23, name: '山地剥', upper: '艮', lower: '坤',
+                judgment: '不利有攸往', interp: '剥落衰败，如山崩地裂。宜守不宜攻，等待衰极转盛之时。' },
+            { pattern: 0b000001, num: 24, name: '地雷复', upper: '坤', lower: '震',
+                judgment: '亨，出入无疾', interp: '一阳来复，冬去春来。衰极转盛，好运回归，万象更新。' },
+            { pattern: 0b111001, num: 25, name: '天雷无妄', upper: '乾', lower: '震',
+                judgment: '元亨利贞，其匪正有眚', interp: '真实无妄，不可有非分之想。顺其自然，不可强求，守正得吉。' },
+            { pattern: 0b100111, num: 26, name: '山天大畜', upper: '艮', lower: '乾',
+                judgment: '利贞，不家食吉', interp: '大积蓄，如高山藏宝。厚积薄发，宜努力学习积累，养精蓄锐。' },
+            { pattern: 0b100001, num: 27, name: '山雷颐', upper: '艮', lower: '震',
+                judgment: '贞吉，观颐自求口实', interp: '颐养之道，注意饮食和修养。宜节制欲望，修身养性。' },
+            { pattern: 0b011110, num: 28, name: '泽风大过', upper: '兑', lower: '巽',
+                judgment: '栋桡，利有攸往，亨', interp: '矫枉过正，如梁木弯曲。凡事过犹不及，需要适度调整。' },
+            { pattern: 0b010010, num: 29, name: '坎为水', upper: '坎', lower: '坎',
+                judgment: '习坎，有孚维心亨', interp: '重重险阻，如涉深水。处险不惊，保持信念，终能渡难关。' },
+            { pattern: 0b101101, num: 30, name: '离为火', upper: '离', lower: '离',
+                judgment: '利贞，亨，畜牝牛吉', interp: '光明依附，如火焰般炽热。宜依附正道，保持光明磊落。' },
+            { pattern: 0b011100, num: 31, name: '泽山咸', upper: '兑', lower: '艮',
+                judgment: '亨，利贞，取女吉', interp: '感而遂通，两情相悦。感情和合之象，恋爱婚姻大吉大利。' },
+            { pattern: 0b001110, num: 32, name: '雷风恒', upper: '震', lower: '巽',
+                judgment: '亨，无咎，利贞', interp: '持之以恒，如日月运行。长久之道在于坚持，守常不变则吉。' },
+            { pattern: 0b111100, num: 33, name: '天山遁', upper: '乾', lower: '艮',
+                judgment: '亨，小利贞', interp: '退避隐遁，以退为进。势不可为时，暂避锋芒，保全实力。' },
+            { pattern: 0b001111, num: 34, name: '雷天大壮', upper: '震', lower: '乾',
+                judgment: '利贞', interp: '强盛壮大，如雷霆万钧。力量充足，但不可恃强凌弱，以正行事。' },
+            { pattern: 0b101000, num: 35, name: '火地晋', upper: '离', lower: '坤',
+                judgment: '康侯用锡马蕃庶', interp: '蒸蒸日上，如旭日东升。事业进步，前程似锦，步步高升。' },
+            { pattern: 0b000101, num: 36, name: '地火明夷', upper: '坤', lower: '离',
+                judgment: '利艰贞', interp: '光明受伤，如日落西山。宜韬光养晦，忍辱负重，黑暗终将过去。' },
+            { pattern: 0b110101, num: 37, name: '风火家人', upper: '巽', lower: '离',
+                judgment: '利女贞', interp: '家庭和睦，如春风暖火。宜注重家庭关系，家和万事兴。' },
+            { pattern: 0b101011, num: 38, name: '火泽睽', upper: '离', lower: '兑',
+                judgment: '小事吉', interp: '乖离不合，求同存异。小事可成，大事难合，宜包容差异。' },
+            { pattern: 0b010100, num: 39, name: '水山蹇', upper: '坎', lower: '艮',
+                judgment: '利西南，不利东北', interp: '艰难跋涉，如涉水登山。前行困难，宜另寻出路，等待时机。' },
+            { pattern: 0b001010, num: 40, name: '雷水解', upper: '震', lower: '坎',
+                judgment: '利西南，无所往', interp: '困难化解，如春风化冻。烦恼消散，问题解决，雨过天晴。' },
+            { pattern: 0b100011, num: 41, name: '山泽损', upper: '艮', lower: '兑',
+                judgment: '有孚，元吉，无咎', interp: '损下益上，有失有得。适当减损反而有益，舍小利得大益。' },
+            { pattern: 0b110001, num: 42, name: '风雷益', upper: '巽', lower: '震',
+                judgment: '利有攸往，利涉大川', interp: '增益丰盈，如春风雨露。好运降临，宜抓住机会积极行动。' },
+            { pattern: 0b011111, num: 43, name: '泽天夬', upper: '兑', lower: '乾',
+                judgment: '扬于王庭，孚号有厉', interp: '决断果敢，一刀两断。宜果断决策，快刀斩乱麻，不留后患。' },
+            { pattern: 0b111110, num: 44, name: '天风姤', upper: '乾', lower: '巽',
+                judgment: '女壮，勿用取女', interp: '不期而遇，意外相逢。可能有意外之事发生，需随机应变。' },
+            { pattern: 0b011000, num: 45, name: '泽地萃', upper: '兑', lower: '坤',
+                judgment: '亨，王假有庙', interp: '聚集荟萃，如江河汇海。人才财物汇聚，宜组织协作。' },
+            { pattern: 0b000110, num: 46, name: '地风升', upper: '坤', lower: '巽',
+                judgment: '元亨，用见大人', interp: '上升渐进，如幼苗成材。事业逐步上升，循序渐进必成大器。' },
+            { pattern: 0b011010, num: 47, name: '泽水困', upper: '兑', lower: '坎',
+                judgment: '亨，贞，大人吉', interp: '受困难行，如陷泥沼。处境艰难，但坚守正道终得脱困。' },
+            { pattern: 0b010110, num: 48, name: '水风井', upper: '坎', lower: '巽',
+                judgment: '改邑不改井，无丧无得', interp: '如井养人，取之不竭。根基稳固，宜修德养民，利他利己。' },
+            { pattern: 0b011101, num: 49, name: '泽火革', upper: '兑', lower: '离',
+                judgment: '己日乃孚，元亨利贞', interp: '变革革新，如烈火炼金。宜主动求变，革故鼎新，顺势改革。' },
+            { pattern: 0b101110, num: 50, name: '火风鼎', upper: '离', lower: '巽',
+                judgment: '元吉，亨', interp: '鼎立天下，如烹小鲜。事业稳固，地位确立，功成名就之象。' },
+            { pattern: 0b001001, num: 51, name: '震为雷', upper: '震', lower: '震',
+                judgment: '亨，震来虩虩', interp: '雷霆震动，如天威降临。突发事件较多，宜镇定从容应对。' },
+            { pattern: 0b100100, num: 52, name: '艮为山', upper: '艮', lower: '艮',
+                judgment: '艮其背，不获其身', interp: '如山静止，适可而止。宜知止不殆，该停则停，不可贪进。' },
+            { pattern: 0b110100, num: 53, name: '风山渐', upper: '巽', lower: '艮',
+                judgment: '女归吉，利贞', interp: '循序渐进，如风拂山峦。凡事不可急于求成，按部就班则成。' },
+            { pattern: 0b001011, num: 54, name: '雷泽归妹', upper: '震', lower: '兑',
+                judgment: '征凶，无攸利', interp: '婚嫁之象，但需两厢情愿。不可强求，名正言顺方为吉。' },
+            { pattern: 0b101100, num: 55, name: '雷火丰', upper: '震', lower: '离',
+                judgment: '亨，王假之，勿忧', interp: '丰盛盈满，如日中天。事业巅峰，但须知月满则亏。' },
+            { pattern: 0b001101, num: 56, name: '火山旅', upper: '离', lower: '艮',
+                judgment: '小亨，旅贞吉', interp: '旅行在外，如做客他乡。宜谨慎行事，入乡随俗，平安为上。' },
+            { pattern: 0b110110, num: 57, name: '巽为风', upper: '巽', lower: '巽',
+                judgment: '小亨，利有攸往', interp: '柔顺谦逊，如微风拂面。以柔克刚，顺从时势可获小成。' },
+            { pattern: 0b011011, num: 58, name: '兑为泽', upper: '兑', lower: '兑',
+                judgment: '亨，利贞', interp: '喜悦和乐，如湖水荡漾。心情愉悦，人际和谐，宜分享快乐。' },
+            { pattern: 0b110010, num: 59, name: '风水涣', upper: '巽', lower: '坎',
+                judgment: '亨，王假有庙', interp: '涣散分离，如风吹水面。离散之后重新聚合，宜团结人心。' },
+            { pattern: 0b010011, num: 60, name: '水泽节', upper: '坎', lower: '兑',
+                judgment: '亨，苦节不可贞', interp: '节制有度，不可过度。凡事适可而止，节制则吉，过则凶。' },
+            { pattern: 0b111101, num: 61, name: '风泽中孚', upper: '巽', lower: '兑',
+                judgment: '豚鱼吉，利涉大川', interp: '诚信感召，如风过湖面。以诚待人则万物皆应，信誉至上。' },
+            { pattern: 0b001100, num: 62, name: '雷山小过', upper: '震', lower: '艮',
+                judgment: '亨，利贞，可小事', interp: '小有过越，大事不宜。小事可成，但大事需谨慎，适可而止。' },
+            { pattern: 0b010101, num: 63, name: '水火既济', upper: '坎', lower: '离',
+                judgment: '亨小，利贞，初吉终乱', interp: '事已成功，但盛极必衰。大功告成后需防懈怠，守成不易。' },
+            { pattern: 0b101010, num: 64, name: '火水未济', upper: '离', lower: '坎',
+                judgment: '亨，小狐汔济，濡其尾', interp: '事尚未成，功亏一篑。虽未完成但前景可期，继续努力。' },
+        ];
+
+        // 建立 pattern → hexagram 快速索引
+        const hexagramByPattern = {};
+        HEXAGRAMS.forEach(h => { hexagramByPattern[h.pattern] = h; });
+
+        // ---- 卜卦状态 ----
+        let divinationState = {
+            active: false,
+            lines: [], // 6 个爻值：6=老阴, 7=少阳, 8=少阴, 9=老阳
+            currentClick: 0, // 0-5（从下往上）
+        };
+
+        /**
+         * 模拟三枚铜钱起卦
+         * 每枚铜钱正面=3，反面=2，三枚之和 = 6/7/8/9
+         */
+        function tossCoins() {
+            const coins = [
+                Math.random() < 0.5 ? 3 : 2,
+                Math.random() < 0.5 ? 3 : 2,
+                Math.random() < 0.5 ? 3 : 2,
+            ];
+            return coins[0] + coins[1] + coins[2];
+        }
+
+        /**
+         * 获取6爻对应的二进制 pattern（阳=1，阴=0，从下往上）
+         */
+        function getPattern(lines) {
+            let pattern = 0;
+            for (let i = 0; i < 6; i++) {
+                const val = lines[i];
+                const isYang = (val === 7 || val === 9);
+                if (isYang) pattern |= (1 << i);
+            }
+            return pattern;
+        }
+
+        /**
+         * 渲染6条爻线
+         */
+        function renderYaoLines() {
+            const area = document.getElementById('yaoLinesArea');
+            area.innerHTML = '';
+            const lines = divinationState.lines;
+            const clickCount = divinationState.currentClick;
+
+            // 从下往上显示（上爻在上，初爻在下）
+            for (let i = 5; i >= 0; i--) {
+                const row = document.createElement('div');
+                row.classList.add('yao-line');
+                row.style.position = 'relative';
+
+                // 序号标注
+                const label = document.createElement('span');
+                label.style.cssText = 'position:absolute;left:-22px;font-size:10px;color:#a09080;';
+                const posNames = ['初', '二', '三', '四', '五', '上'];
+                label.textContent = posNames[i];
+                row.appendChild(label);
+
+                if (i < clickCount) {
+                    // 已生成的爻
+                    const val = lines[i];
+                    const isYang = (val === 7 || val === 9);
+                    const isChanging = (val === 6 || val === 9);
+
+                    if (isYang) {
+                        const yang = document.createElement('div');
+                        yang.classList.add('yang-line');
+                        row.appendChild(yang);
+                    } else {
+                        const yin = document.createElement('div');
+                        yin.classList.add('yin-line');
+                        yin.innerHTML = '<span></span><span></span>';
+                        row.appendChild(yin);
+                    }
+
+                    // 变爻标记（行内，紧跟在爻线右侧）
+                    if (isChanging) {
+                        const mark = document.createElement('span');
+                        mark.classList.add('change-mark');
+                        mark.classList.add(val === 9 ? 'old-yang' : 'old-yin');
+                        mark.textContent = val === 9 ? '◉' : '✕';
+                        mark.title = val === 9 ? '老阳（变爻）' : '老阴（变爻）';
+                        row.appendChild(mark);
+                    }
+
+                    // 爻值标注（右侧远处）
+                    const valLabel = document.createElement('span');
+                    valLabel.classList.add('yao-val-label');
+                    const valNames = { 6: '老阴', 7: '少阳', 8: '少阴', 9: '老阳' };
+                    valLabel.textContent = valNames[val];
+                    row.appendChild(valLabel);
+
+                } else if (i === clickCount) {
+                    // 当前待点击的位置
+                    row.classList.add('pending');
+                } else {
+                    // 尚未轮到
+                    row.style.opacity = '0.25';
+                    row.style.border = '1px dashed #d8ccb8';
+                    row.style.borderRadius = '6px';
+                }
+
+                area.appendChild(row);
+            }
+        }
+
+        /**
+         * 处理一次点击（生成一爻）
+         */
+        function handleYaoClick() {
+            if (divinationState.currentClick >= 6) return;
+
+            const val = tossCoins();
+            divinationState.lines[divinationState.currentClick] = val;
+            divinationState.currentClick++;
+
+            renderYaoLines();
+            updateClickHint();
+
+            if (divinationState.currentClick >= 6) {
+                // 全部完成，显示结果
+                setTimeout(() => showHexagramResult(), 400);
+            }
+        }
+
+        /**
+         * 更新点击提示
+         */
+        function updateClickHint() {
+            const remaining = 6 - divinationState.currentClick;
+            const hint = document.getElementById('divClickHint');
+            const subtitle = document.getElementById('divSubtitle');
+
+            if (remaining > 0) {
+                hint.innerHTML = '还需摇卦 <span class="click-count">' + remaining + '</span> 次';
+                hint.style.display = '';
+                subtitle.textContent = '心中默念所求之事，诚心点击';
+            } else {
+                hint.style.display = 'none';
+                subtitle.textContent = '卦象已成，请阅解读';
+            }
+        }
+
+        /**
+         * 显示卦象结果
+         */
+        function showHexagramResult() {
+            const lines = divinationState.lines;
+            const pattern = getPattern(lines);
+
+            const hex = hexagramByPattern[pattern];
+            if (!hex) {
+                document.getElementById('hexagramResult').innerHTML = '<p style="color:red;">卦象匹配错误</p>';
+                document.getElementById('hexagramResult').style.display = '';
+                return;
+            }
+
+            // 计算变卦（之卦）
+            let changedPattern = pattern;
+            let hasChanging = false;
+            const changingLines = [];
+            for (let i = 0; i < 6; i++) {
+                const val = lines[i];
+                if (val === 6 || val === 9) {
+                    hasChanging = true;
+                    changingLines.push(i);
+                    // 翻转该位
+                    changedPattern ^= (1 << i);
+                }
+            }
+
+            const changedHex = hasChanging ? hexagramByPattern[changedPattern] : null;
+
+            const posNames = ['初', '二', '三', '四', '五', '上'];
+
+            // 构建结果 HTML
+            let html = '';
+
+            // 卦名
+            html += '<div class="hex-name">第' + hex.num + '卦 ' + hex.name + '</div>';
+            html += '<div style="font-size:12px;color:#8a7a6a;">上' + hex.upper + '下' + hex.lower + '</div>';
+            html += '<div class="hex-judgment">彖曰：' + hex.judgment + '</div>';
+
+            // 变爻
+            if (hasChanging && changingLines.length > 0) {
+                const changingNames = changingLines.map(i => posNames[i] + '爻').join('、');
+                html += '<div style="font-size:12px;color:#c0392b;margin:4px 0;">变爻：' + changingNames +
+                    ' → 之卦 ' + (changedHex ? changedHex.name : '—') + '</div>';
+            }
+
+            // 解读
+            html += '<div class="hex-detail">';
+            html += '<strong>📖 卦辞解读：</strong><br>' + hex.interp;
+            if (changedHex && changedHex !== hex) {
+                html += '<br><br><strong>🔄 之卦 ' + changedHex.name + '：</strong>' + changedHex.interp;
+                html += '<br><span style="font-size:11px;color:#888;">（变爻指示事物发展方向）</span>';
+            }
+            html += '</div>';
+
+            document.getElementById('hexagramResult').innerHTML = html;
+            document.getElementById('hexagramResult').style.display = '';
+            document.getElementById('divRetryBtn').style.display = '';
+            document.getElementById('divClickHint').style.display = 'none';
+        }
+
+        /**
+         * 渲染卦桶内的木签
+         */
+        function renderBucketSticks() {
+            const container = document.getElementById('divSticks');
+            container.innerHTML = '';
+            // 8 根木签在桶内微微抖动
+            for (let i = 0; i < 8; i++) {
+                const stick = document.createElement('div');
+                stick.classList.add('stick');
+                stick.style.animationDelay = (i * 0.04) + 's';
+                container.appendChild(stick);
+            }
+        }
+
+        /**
+         * 卦桶摇动 → 飞出木签 → 生成爻线
+         */
+        function shakeBucket(callback) {
+            const bucket = document.getElementById('divBucket');
+            const area = document.getElementById('divBucketArea');
+            const sticksContainer = document.getElementById('divSticks');
+
+            // 防止连点
+            if (area.classList.contains('busy')) return;
+            area.classList.add('busy');
+
+            // 木签剧烈抖动
+            const sticks = sticksContainer.querySelectorAll('.stick');
+            sticks.forEach(s => {
+                s.style.animation = 'stickJitter 0.12s ease-in-out infinite';
+            });
+
+            // 卦桶摇动
+            bucket.classList.add('shaking');
+            document.getElementById('divSubtitle').textContent = '摇卦中…';
+
+            // 摇卦结束飞出木签
+            setTimeout(() => {
+                bucket.classList.remove('shaking');
+                sticks.forEach(s => { s.style.animation = 'stickJitter 0.3s ease-in-out infinite'; });
+
+                // 飞出一根木签
+                const flyStick = document.createElement('div');
+                flyStick.classList.add('flying-stick');
+                flyStick.style.left = '50%';
+                flyStick.style.top = '12px';
+                document.getElementById('divBucketArea').appendChild(flyStick);
+
+                // 木签飞出后执行回调
+                setTimeout(() => {
+                    flyStick.remove();
+                    area.classList.remove('busy');
+                    if (callback) callback();
+                }, 600);
+            }, 850);
+        }
+
+        /**
+         * 打开卜卦面板
+         */
+        function openDivination() {
+            divinationState = {
+                active: true,
+                lines: new Array(6).fill(0),
+                currentClick: 0,
+            };
+            document.getElementById('divinationOverlay').style.display = 'flex';
+            document.getElementById('hexagramResult').style.display = 'none';
+            document.getElementById('divRetryBtn').style.display = 'none';
+            document.getElementById('divBucketArea').classList.remove('busy');
+            document.getElementById('divSubtitle').textContent = '心中默念所求之事，点击卦桶摇卦';
+            renderBucketSticks();
+            renderYaoLines();
+            updateClickHint();
+        }
+
+        /**
+         * 关闭卜卦面板
+         */
+        function closeDivination() {
+            document.getElementById('divinationOverlay').style.display = 'none';
+            divinationState.active = false;
+        }
+
+        /**
+         * 重新卜卦
+         */
+        function retryDivination() {
+            divinationState.lines = new Array(6).fill(0);
+            divinationState.currentClick = 0;
+            document.getElementById('hexagramResult').style.display = 'none';
+            document.getElementById('divRetryBtn').style.display = 'none';
+            document.getElementById('divBucketArea').classList.remove('busy');
+            document.getElementById('divSubtitle').textContent = '心中默念所求之事，点击卦桶摇卦';
+            renderBucketSticks();
+            renderYaoLines();
+            updateClickHint();
+        }
+
+        // ============================================================
+        // 十六、事件绑定
+        // ============================================================
+        document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
+        document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
+        document.getElementById('todayBtn').addEventListener('click', goToToday);
+        document.getElementById('addEventBtn').addEventListener('click', addEvent);
+        document.getElementById('eventInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') addEvent();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') { changeMonth(-1); hideHuangliPopup(); }
+            else if (e.key === 'ArrowRight') { changeMonth(1); hideHuangliPopup(); }
+            else if (e.key === 'Escape') {
+                hideHuangliPopup();
+                closeDivination();
+            }
+        });
+
+        // ---- 黄历弹窗关闭事件 ----
+        document.getElementById('hlCloseBtn').addEventListener('click', hideHuangliPopup);
+        document.getElementById('huangliOverlay').addEventListener('click', function(e) {
+            if (e.target === this) hideHuangliPopup();
+        });
+
+        // ---- 城市选择事件 ----
+        document.getElementById('locationDisplay').addEventListener('click', function() {
+            document.getElementById('cityOverlay').style.display = 'flex';
+            document.getElementById('citySubtitle').textContent = '输入城市名搜索，或使用GPS自动定位';
+            document.getElementById('citySearchInput').value = '';
+            document.getElementById('citySearchResults').innerHTML = '';
+        });
+        document.getElementById('citySearchBtn').addEventListener('click', function() {
+            searchCity(document.getElementById('citySearchInput').value);
+        });
+        document.getElementById('citySearchInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') searchCity(this.value);
+        });
+        document.getElementById('cityGpsBtn').addEventListener('click', requestGPSLocation);
+        document.getElementById('cityCloseBtn').addEventListener('click', function() {
+            document.getElementById('cityOverlay').style.display = 'none';
+        });
+        document.getElementById('cityOverlay').addEventListener('click', function(e) {
+            if (e.target === this) document.getElementById('cityOverlay').style.display = 'none';
+        });
+
+        // ---- PWA 安装按钮 ----
+        document.getElementById('pwaInstallBtn').addEventListener('click', function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(result => {
+                    console.log('安装结果:', result.outcome);
+                    deferredPrompt = null;
+                    document.getElementById('pwaInstallBtn').style.display = 'none';
+                });
+            } else {
+                alert('请通过浏览器菜单 → "添加到主屏幕" 安装');
+            }
+        });
+
+        // ---- 六爻卜卦事件 ----
+        // 打开运势面板
+        document.getElementById('fortuneBtn').addEventListener('click', openDivination);
+        // 点击卦桶 → 摇卦生成一爻
+        document.getElementById('divBucket').addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (divinationState.currentClick < 6 && !document.getElementById('divBucketArea').classList.contains('busy')) {
+                shakeBucket(() => handleYaoClick());
+            }
+        });
+        // 关闭按钮
+        document.getElementById('divCloseBtn').addEventListener('click', closeDivination);
+        // 重新卜卦
+        document.getElementById('divRetryBtn').addEventListener('click', retryDivination);
+        // 点击遮罩关闭
+        document.getElementById('divinationOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeDivination();
+        });
+
+        // ============================================================
+        // 十七、启动
+        // ============================================================
+        // ---- PWA: 注册 Service Worker ----
+        if ('serviceWorker' in navigator && location.protocol === 'https:') {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                console.log('📦 SW 已注册:', reg.scope);
+            }).catch(err => {
+                console.log('SW 注册失败（可能非HTTPS）:', err);
+            });
+        }
+
+        // ---- PWA: 监听安装事件 ----
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // 显示安装按钮
+            const installBtn = document.getElementById('pwaInstallBtn');
+            if (installBtn) installBtn.style.display = '';
+        });
+
+        loadEvents();
+        renderCalendar();
+        renderEventList();
+        initWeather();
+
+        console.log('🌍 四季日历已就绪！');
+        console.log('📱 PWA 模式: 部署到 HTTPS 服务器后可安装到手机桌面');
+        console.log('📆 每个日期显示对应农历（阴历）');
+        console.log('📜 点击日期弹出黄历面板：宜忌、冲煞、吉凶神');
+        console.log('🎆 特色节日自动切换主题动画 + 音效（春节🧨、中秋🌕、七夕💫...）');
+        console.log('🌸 春季：3-5月 | ☀️ 夏季：6-8月 | 🍂 秋季：9-11月 | ❄️ 冬季：12-2月');
+        console.log('📍 气候参考：中国华北平原');
+        console.log('🔮 点击「今日运势」按钮，六爻卜卦，点击6次得卦象解读~');
+        console.log('💡 用 ← → 方向键切换月份，点击日期查看黄历，按 Esc 关闭弹窗~');
+    </script>
+</body>
+</html>
