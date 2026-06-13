@@ -1,0 +1,16 @@
+{
+    "name": "四季日历 · 黄历卜卦",
+    "short_name": "四季日历",
+    "description": "农历黄历、六爻卜卦、天气预报、节日场景",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#f5f0e8",
+    "theme_color": "#8b5e3c",
+    "orientation": "portrait-primary",
+    "icons": [{
+        "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23f5f0e8'/><text x='50' y='40' text-anchor='middle' font-size='36'>📅</text><text x='50' y='75' text-anchor='middle' font-size='18' fill='%238b5e3c' font-weight='bold'>日历</text></svg>",
+        "sizes": "100x100",
+        "type": "image/svg+xml",
+        "purpose": "any maskable"
+    }]
+}
