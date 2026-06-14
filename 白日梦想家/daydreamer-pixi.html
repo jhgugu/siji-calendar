@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>白日梦想家</title>
+<style>*{margin:0;padding:0}body{background:#0a0a14}canvas{display:block;margin:0 auto}
+#gifOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column}
+#gifOverlay img{width:320px;height:240px;object-fit:contain}
+#gifBanner{background:#161630;border:2px solid #ffd700;border-radius:10px;padding:12px 40px;color:#ffd700;font-size:32px;font-weight:bold;font-family:Arial;margin-top:10px;display:none}
+</style>
+</head>
+<body>
+<div id="gifOverlay"><img src="box_opening_animation.gif" id="gifImg"><div id="gifBanner"></div></div>
+<script src="https://pixijs.download/v7.x/pixi.min.js"></script>
+<script>
+const W=1280,H=720;
+const app=new PIXI.Application({width:W,height:H,backgroundColor:0x0a0a14,antialias:true,resolution:Math.min(window.devicePixelRatio||1,2),autoDensity:false});
+document.body.appendChild(app.view);
+function resizeGame(){
+    const ww=window.innerWidth,wh=window.innerHeight;
+    const scale=Math.min(ww/W,wh/H);
+    app.view.style.width=(W*scale)+'px';app.view.style.height=(H*scale)+'px';
+    app.view.style.position='absolute';app.view.style.left=((ww-W*scale)/2)+'px';app.view.style.top=((wh-H*scale)/2)+'px';
+}
+window.addEventListener('resize',resizeGame);resizeGame();
+
+// 加载真图
+let texture=null,openTexture=null;
+const img=new Image();
+img.onload=()=>{
+    texture=PIXI.Texture.from(img);
+    texture.baseTexture.scaleMode=PIXI.SCALE_MODES.LINEAR;
+    console.log('✅ case.png 已加载 ('+img.naturalWidth+'x'+img.naturalHeight+')');
+    // 加载开箱图
+    const img2=new Image();
+    img2.onload=()=>{openTexture=PIXI.Texture.from(img2);console.log('✅ case-open.png 已加载');init();};
+    img2.onerror=()=>{console.log('⚠️ 无开箱图，用代码替代');init();};
+    img2.src='case-open.png';
+};
+img.onerror=()=>{console.log('❌ 图片加载失败');init();};
+img.src='case.png';
+
+// 背景：帷幕 + 聚光灯
+const bg=new PIXI.Graphics();
+// 左帘
+bg.beginFill(0x0a0010,0.9);bg.drawRect(0,0,260,H);bg.endFill();
+bg.beginFill(0x150020,0.5);bg.drawRect(80,0,4,H);bg.endFill();
+bg.beginFill(0x150020,0.4);bg.drawRect(180,0,3,H);bg.endFill();
+// 右帘
+bg.beginFill(0x0a0010,0.9);bg.drawRect(W-260,0,260,H);bg.endFill();
+bg.beginFill(0x150020,0.5);bg.drawRect(W-84,0,4,H);bg.endFill();
+bg.beginFill(0x150020,0.4);bg.drawRect(W-183,0,3,H);bg.endFill();
+// 顶部帘
+bg.beginFill(0x0a0010,0.95);bg.drawRect(0,0,W,55);bg.endFill();
+bg.lineStyle(1,0xc8a848,0.06);bg.moveTo(260,55);bg.lineTo(W-260,55);
+// 聚光灯
+bg.beginFill(0xc8a848,0.015);bg.drawEllipse(W/2,-20,600,H);bg.endFill();
+bg.beginFill(0xc8a848,0.01);bg.drawEllipse(W/2,-50,450,H*0.7);bg.endFill();
+app.stage.addChildAt(bg,0);
+
+// 游戏数据
+const AM=[0.1,1,5,10,25,50,75,100,150,200,300,400,500,1000,5000,10000,25000,50000,75000,100000,200000,300000,400000,500000,750000,1000000];
+const RB=[6,5,4,3,2,1],HI=new Set([25000,50000,75000,100000,200000,300000,400000,500000,750000,1000000]);
+function fm(n){if(n>=1e6)return'$'+(n/1e6).toFixed(0)+'M';if(n>=1000)return'$'+Math.round(n).toLocaleString('en-US');return'$'+(n>=1?n.toFixed(0):n.toFixed(1))}
+function sh(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+// 状态
+let st={boxes:[],ch:-1,rd:0,to:0,op:0,bg:false,ov:false,earn:0,coins:0};
+let items=[],statusTxt,coinTxt;
+
+// 报价弹窗层
+const offerLayer=new PIXI.Container();offerLayer.visible=false;app.stage.addChild(offerLayer);
+
+function createOfferUI(){
+    offerLayer.removeChildren();
+    // 半透明遮罩
+    const mask=new PIXI.Graphics();
+    mask.beginFill(0x000000,0.8);mask.drawRect(0,0,W,H);mask.endFill();
+    mask.interactive=true;
+    offerLayer.addChild(mask);
+
+    // 弹窗卡片
+    const cardW=420,cardH=240;
+    const card=new PIXI.Graphics();
+    card.beginFill(0x1a1a35,1);card.drawRoundedRect(0,0,cardW,cardH,20);card.endFill();
+    card.lineStyle(2,0xc8a848,0.6);card.drawRoundedRect(0,0,cardW,cardH,20);
+    card.beginFill(0xc8a848,0.08);card.drawRoundedRect(4,4,cardW-8,cardH-8,17);card.endFill();
+    card.x=W/2-cardW/2;card.y=H/2-cardH/2;
+    offerLayer.addChild(card);
+
+    // 标题
+    const title=new PIXI.Text('🏦 银行家报价',{fontSize:16,fill:0xc8a848,fontFamily:'Arial',letterSpacing:3});
+    title.anchor.set(0.5);title.x=W/2;title.y=H/2-85;
+    offerLayer.addChild(title);
+
+    // 金额
+    const amtTxt=new PIXI.Text('',{fontSize:48,fontWeight:'bold',fill:0xffd700,fontFamily:'Arial',dropShadow:true,dropShadowColor:0x000000,dropShadowDistance:3});
+    amtTxt.anchor.set(0.5);amtTxt.x=W/2;amtTxt.y=H/2-20;amtTxt.name='offerAmt';
+    offerLayer.addChild(amtTxt);
+
+    // 提示
+    const hint=new PIXI.Text('回购你的宝箱',{fontSize:12,fill:0x999999,fontFamily:'Arial'});
+    hint.anchor.set(0.5);hint.x=W/2;hint.y=H/2+25;
+    offerLayer.addChild(hint);
+
+    // 按钮
+    function btn(label,x,y,bgColor,textColor,cb){
+        const b=new PIXI.Graphics();b.beginFill(bgColor,1);b.drawRoundedRect(0,0,110,40,20);b.endFill();
+        b.lineStyle(1,0xffffff,0.2);b.drawRoundedRect(0,0,110,40,20);
+        b.x=x;b.y=y;b.interactive=true;b.cursor='pointer';
+        const t=new PIXI.Text(label,{fontSize:15,fontWeight:'bold',fill:textColor,fontFamily:'Arial'});
+        t.anchor.set(0.5);t.x=x+55;t.y=y+20;
+        b.on('pointerdown',cb);
+        b.on('pointerover',()=>{b.alpha=0.8});b.on('pointerout',()=>{b.alpha=1});
+        offerLayer.addChild(b);offerLayer.addChild(t);
+    }
+    btn('成交',W/2-175,H/2+55,0x27ae60,0xffffff,()=>{offerLayer.visible=false;doDeal(window._o)});
+    btn('拒绝',W/2-55,H/2+55,0x444444,0xcccccc,()=>{offerLayer.visible=false;doNext()});
+    if(st.bg){
+        btn('已使用',W/2+65,H/2+55,0x333333,0x666666,()=>{});
+    }else{
+        btn('还价',W/2+65,H/2+55,0xe67e22,0xffffff,()=>{showCounterInput()});
+    }
+}
+
+// 显示报价
+function showOfferUI(o){
+    window._o=o;
+    if(window._feedbackTimer){clearTimeout(window._feedbackTimer);window._feedbackTimer=null}
+    offerLayer.removeChildren();
+    createOfferUI();
+    const amtChild=offerLayer.getChildByName('offerAmt');
+    if(amtChild)amtChild.text=fm(o);
+    offerLayer.visible=true;
+    app.stage.setChildIndex(offerLayer,app.stage.children.length-1);
+    console.log('offer shown:',fm(o));
+}
+
+function showCounterInput(){
+    offerLayer.removeChildren();
+    const mask=new PIXI.Graphics();mask.beginFill(0x000000,0.8);mask.drawRect(0,0,W,H);mask.endFill();
+    offerLayer.addChild(mask);
+    const card=new PIXI.Graphics();card.beginFill(0x1a1a35);card.drawRoundedRect(0,0,400,200,20);card.endFill();
+    card.lineStyle(2,0xe67e22,0.6);card.drawRoundedRect(0,0,400,200,20);
+    card.x=W/2-200;card.y=H/2-100;offerLayer.addChild(card);
+    const title=new PIXI.Text('💰 你的还价',{fontSize:16,fill:0xe67e22,fontFamily:'Arial',letterSpacing:3});
+    title.anchor.set(0.5);title.x=W/2;title.y=H/2-70;offerLayer.addChild(title);
+    const hint=new PIXI.Text('银行家报价: '+fm(window._o),{fontSize:18,fill:0x999999,fontFamily:'Arial'});
+    hint.anchor.set(0.5);hint.x=W/2;hint.y=H/2-50;offerLayer.addChild(hint);
+    const warn=new PIXI.Text('⚠ 每局仅可使用一次还价',{fontSize:14,fill:0xe67e22,fontFamily:'Arial',fontWeight:'bold'});
+    warn.anchor.set(0.5);warn.x=W/2;warn.y=H/2-28;offerLayer.addChild(warn);
+
+    const inpBg=new PIXI.Graphics();inpBg.beginFill(0x0a0a20);inpBg.drawRoundedRect(0,0,220,42,8);inpBg.endFill();
+    inpBg.lineStyle(1,0xe67e22,0.4);inpBg.drawRoundedRect(0,0,220,42,8);
+    inpBg.x=W/2-110;inpBg.y=H/2-8;offerLayer.addChild(inpBg);
+    const inpText=new PIXI.Text('',{fontSize:24,fontWeight:'bold',fill:0xffd700,fontFamily:'Arial'});
+    inpText.anchor.set(0.5);inpText.x=W/2;inpText.y=H/2+13;offerLayer.addChild(inpText);
+    window._ci='';
+
+    const keys=[['1','2','3'],['4','5','6'],['7','8','9'],['0','⌫','✓']];
+    keys.forEach((row,ri)=>{row.forEach((k,ci)=>{
+        const kb=new PIXI.Graphics();kb.beginFill(0x2a2a45);kb.drawRoundedRect(0,0,54,34,6);kb.endFill();
+        kb.lineStyle(1,0x555555,0.3);kb.drawRoundedRect(0,0,54,34,6);
+        kb.x=W/2-100+ci*56;kb.y=H/2+52+ri*38;kb.interactive=true;kb.cursor='pointer';
+        const kt=new PIXI.Text(k,{fontSize:18,fill:0xffffff,fontFamily:'Arial'});
+        kt.anchor.set(0.5);kt.x=kb.x+27;kt.y=kb.y+17;
+        kb.on('pointerdown',()=>{
+            if(k==='⌫'){window._ci=window._ci.slice(0,-1)}
+            else if(k==='✓'){
+                const ca=parseFloat(window._ci);if(isNaN(ca)||ca<=0){alert('请输入有效金额');return}
+                offerLayer.visible=false;doCounter(ca);
+            }else{window._ci+=k}
+            inpText.text=window._ci?fm(parseFloat(window._ci)):'';
+        });
+        offerLayer.addChild(kb);offerLayer.addChild(kt);
+    })});
+
+    const cb=new PIXI.Graphics();cb.beginFill(0x444444);cb.drawRoundedRect(0,0,100,32,16);cb.endFill();
+    cb.x=W/2-50;cb.y=H/2+218;cb.interactive=true;cb.cursor='pointer';
+    const ct=new PIXI.Text('取消',{fontSize:13,fill:0xcccccc,fontFamily:'Arial'});
+    ct.anchor.set(0.5);ct.x=W/2;ct.y=H/2+234;
+    cb.on('pointerdown',()=>{createOfferUI();offerLayer.getChildByName('offerAmt').text=fm(window._o)});
+    offerLayer.addChild(cb);offerLayer.addChild(ct);
+    app.stage.setChildIndex(offerLayer,app.stage.children.length-1);
+}
+
+createOfferUI();
+
+// 音效
+let ctx=null;function ac(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+// 🎬 卡通音效合成
+function sfxCartoonCheer(){try{const c=ac(),t=c.currentTime;
+    // 上升滑音 + 碎铃铛
+    const o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.setValueAtTime(300,t);o.frequency.exponentialRampToValueAtTime(1200,t+0.4);g.gain.setValueAtTime(0.1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.45);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.5);
+    for(let i=0;i<8;i++){setTimeout(()=>{const o2=c.createOscillator(),g2=c.createGain();o2.type='sine';o2.frequency.setValueAtTime(800+Math.random()*1200,c.currentTime);g2.gain.setValueAtTime(0.08,c.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.2);o2.connect(g2);g2.connect(c.destination);o2.start();o2.stop(c.currentTime+0.2)},i*60)}}catch(e){}}
+function sfxCartoonOhNo(){try{const c=ac(),t=c.currentTime;
+    // 经典下降"哇哇哇"（摹仿长号）
+    const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.setValueAtTime(500,t);o.frequency.exponentialRampToValueAtTime(80,t+0.8);g.gain.setValueAtTime(0.12,t);g.gain.setValueAtTime(0.08,t+0.3);g.gain.exponentialRampToValueAtTime(0.001,t+0.9);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1);
+    // 结尾"噗"
+    setTimeout(()=>{const n=c.createBufferSource(),bg=c.createGain();const s=c.createBuffer(1,c.sampleRate*0.15,c.sampleRate);const d=s.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.2));n.buffer=s;bg.gain.setValueAtTime(0.15,c.currentTime);bg.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15);n.connect(bg);bg.connect(c.destination);n.start();n.stop(c.currentTime+0.15)},600)}catch(e){}}
+function sfxCartoonNormal(){try{const c=ac(),t=c.currentTime;
+    // 清脆"叮叮叮"
+    [600,750,900].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(f,t+i*0.1);g.gain.setValueAtTime(0.12,t+i*0.1);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.2);o.connect(g);g.connect(c.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.25)})}catch(e){}}
+function sfxCartoonWin(){try{const c=ac(),t=c.currentTime;
+    // 小号式庆祝
+    [523,659,784,1047,1318].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.setValueAtTime(f,t+i*0.12);g.gain.setValueAtTime(0.1,t+i*0.12);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+0.4);o.connect(g);g.connect(c.destination);o.start(t+i*0.12);o.stop(t+i*0.12+0.4)});
+    // 结尾"叮！"
+    setTimeout(()=>{const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(1400,c.currentTime);g.gain.setValueAtTime(0.15,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.6);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.6)},600)}catch(e){}}
+function sfxCartoonLose(){try{const c=ac(),t=c.currentTime;
+    // 铛铛铛依次低沉
+    [400,320,240,180].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t+i*0.25);g.gain.setValueAtTime(0.15,t+i*0.25);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.25+0.4);o.connect(g);g.connect(c.destination);o.start(t+i*0.25);o.stop(t+i*0.25+0.4)})}catch(e){}}
+
+function playOpenSound(amt){
+    const src=amt<=500?'cheer.wav':amt>=100000?'ohno.wav':'normal.mp3';
+    const a=new Audio(src);a.currentTime=0;a.play().catch(()=>{});
+    setTimeout(()=>{a.pause();a.remove()},3000);
+}
+document.addEventListener('click',()=>{if(ctx&&ctx.state==='suspended')ctx.resume()},{once:true});
+
+// 标题
+const title=new PIXI.Text('白 日 梦 想 家',{fontSize:36,fontWeight:'bold',fill:0xe8d48b,fontFamily:'Arial',letterSpacing:6,dropShadow:true,dropShadowColor:0x000000,dropShadowDistance:2});
+title.anchor.set(0.5);title.x=W/2;title.y=30;app.stage.addChild(title);
+
+// 状态文字
+statusTxt=new PIXI.Text('🎯 选择一个宝箱',{fontSize:16,fill:0xc8a848,fontFamily:'Arial',letterSpacing:2});
+statusTxt.anchor.set(0.5);statusTxt.x=W/2;statusTxt.y=120;app.stage.addChild(statusTxt);
+
+// 金币
+coinTxt=new PIXI.Text('🪙 0',{fontSize:14,fill:0xc8a848,fontFamily:'Arial'});
+coinTxt.anchor.set(0.5);coinTxt.x=W-100;coinTxt.y=30;app.stage.addChild(coinTxt);
+
+// 金额板
+const boardContainer=new PIXI.Container();app.stage.addChild(boardContainer);
+const boardItems=[]; // {txt,amount}
+
+function createBoard(){
+    boardContainer.removeChildren();boardItems.length=0;
+    const bx=W-500,by=115,BW=480;
+    // 背景
+    const bg=new PIXI.Graphics();
+    bg.beginFill(0x0a0814,0.8);bg.drawRoundedRect(0,0,BW,H-by-15,10);bg.endFill();
+    bg.lineStyle(1,0xc8a848,0.1);bg.drawRoundedRect(0,0,BW,H-by-15,10);
+    bg.x=bx;bg.y=by;boardContainer.addChild(bg);
+
+    // 标题
+    const colCenter=bx+270; // 两列正中心: (bx+140 + bx+400)/2 = bx+270
+    const t=new PIXI.Text('当前剩余宝箱',{fontSize:16,fill:0xc8a848,fontFamily:'Arial',letterSpacing:4,fontWeight:'bold',align:'center'});
+    t.anchor.set(0.5,0.5);t.x=colCenter;t.y=by+24;boardContainer.addChild(t);
+
+    // 两列金额
+    const sorted=[...AM].sort((a,b)=>a-b);const mid=Math.ceil(sorted.length/2);
+    function bfmt(n){if(n===1000000)return'$1,000,000';return fm(n)}
+    [sorted.slice(0,mid),sorted.slice(mid)].forEach((col,ci)=>{
+        col.forEach((a,ri)=>{
+            const txt=new PIXI.Text(bfmt(a),{fontSize:16,fill:0xc8a848,fontFamily:'monospace',fontWeight:'bold'});
+            txt.anchor.set(0.5,0);txt.x=bx+40+ci*260+100;txt.y=by+38+ri*21;
+            boardContainer.addChild(txt);
+            boardItems.push({txt,amount:a,line:null,crossed:false});
+        });
+    });
+}
+
+function updateBoard(){
+    const remaining=st.boxes.filter(b=>!b.open).map(b=>b.amt);
+    boardItems.forEach(bi=>{
+        if(!remaining.includes(bi.amount)&&!bi.crossed){
+            bi.crossed=true;
+            // 动态划线：从左到右展开
+            if(!bi.line){
+                const ln=new PIXI.Graphics();
+                ln.lineStyle(2,0xe74c3c,0.7);
+                boardContainer.addChild(ln);bi.line=ln;
+            }
+            const left=bi.txt.x-bi.txt.width/2-4,right=bi.txt.x+bi.txt.width/2+4;
+            const ln=bi.line,startX=left,endX=right,y=bi.txt.y+8;
+            let p=0;const dur=2.5;
+            function drawLine(){
+                p+=0.016;const t=Math.min(p/dur,1),cx=startX+(endX-startX)*t;
+                ln.clear();ln.lineStyle(2.5,0xe74c3c,0.8);ln.moveTo(startX,y);ln.lineTo(cx,y);
+                if(t<1)requestAnimationFrame(drawLine);else{
+                    setTimeout(()=>{bi.txt.style.fill=0x444444;bi.txt.alpha=0.4},200);
+                }
+            }
+            drawLine();
+        }else if(!remaining.includes(bi.amount)){
+            // 已划线，保持暗色
+        }else{
+            bi.crossed=false;bi.txt.style.fill=HI.has(bi.amount)?0xff6644:0xc8a848;bi.txt.alpha=1;
+            if(HI.has(bi.amount))bi.txt.style.fontSize=bi.amount>=100000?17:15;
+            if(bi.line)bi.line.clear();
+        }
+    });
+}
+
+// 重新开始按钮
+const restartBtn=new PIXI.Container();restartBtn.visible=false;app.stage.addChild(restartBtn);
+const rbBg=new PIXI.Graphics();
+rbBg.beginFill(0xc8a848,0.15);rbBg.drawRoundedRect(0,0,140,40,20);rbBg.endFill();
+rbBg.lineStyle(1.5,0xc8a848,0.4);rbBg.drawRoundedRect(0,0,140,40,20);
+restartBtn.addChild(rbBg);
+const rbTxt=new PIXI.Text('再来一局',{fontSize:16,fontWeight:'bold',fill:0xe8d48b,fontFamily:'Arial',letterSpacing:2});
+rbTxt.anchor.set(0.5);rbTxt.x=70;rbTxt.y=20;restartBtn.addChild(rbTxt);
+restartBtn.x=W/2-70;restartBtn.y=H-70;
+restartBtn.interactive=true;restartBtn.cursor='pointer';
+restartBtn.on('pointerdown',()=>{restartBtn.visible=false;init()});
+
+// 展示台
+const pedestal=new PIXI.Container();pedestal.visible=false;app.stage.addChild(pedestal);
+const pedBg=new PIXI.Graphics();pedestal.addChild(pedBg);
+const pedSpr=new PIXI.Sprite();pedestal.addChild(pedSpr);
+const pedLabel=new PIXI.Text('你的宝箱',{fontSize:11,fill:0xc8a848,fontFamily:'Arial',letterSpacing:2});
+pedLabel.anchor.set(0.5);pedLabel.x=240;pedLabel.y=28;pedestal.addChild(pedLabel);
+const pedQ=new PIXI.Text('?',{fontSize:24,fontWeight:'bold',fill:0xe8d48b,fontFamily:'Arial'});
+pedQ.anchor.set(0.5);pedQ.x=320;pedQ.y=28;pedestal.addChild(pedQ);
+
+function showPedestal(){
+    pedBg.clear();pedBg.beginFill(0xc8a848,0.03);pedBg.drawRoundedRect(0,0,320,56,8);pedBg.endFill();
+    pedBg.lineStyle(1,0xc8a848,0.1);pedBg.drawRoundedRect(0,0,320,56,8);
+    pedestal.x=W/2-160;pedestal.y=55;
+    pedLabel.x=100;pedLabel.y=28;
+    pedQ.x=220;pedQ.y=28;
+    if(texture){
+        pedSpr.texture=texture;pedSpr.width=40;pedSpr.height=32;
+        pedSpr.x=150;pedSpr.y=12;pedSpr.visible=true;
+    }
+    pedestal.visible=true;
+}
+
+// 宝箱层
+const boxLayer=new PIXI.Container();app.stage.addChild(boxLayer);
+const popupLayer=new PIXI.Container();app.stage.addChild(popupLayer);
+
+// 创建宝箱
+function createBoxes(){
+    boxLayer.removeChildren();items=[];
+    const CW=100,CH=76,GAP=18,COLS=6;
+    for(let i=0;i<26;i++){
+        const col=i%COLS,row=Math.floor(i/COLS);
+        const cont=new PIXI.Container();
+
+        // 真图精灵
+        let spr;
+        if(texture){spr=new PIXI.Sprite(texture);spr.width=CW;spr.height=CH}
+        else{spr=new PIXI.Graphics();spr.beginFill(0x888899);spr.drawRoundedRect(0,0,CW,CH,6);spr.endFill()}
+        cont.addChild(spr);
+
+        // 圆圈编号（箱子下方）
+        const circle=new PIXI.Graphics();
+        circle.beginFill(0xc8a848,0.9);circle.drawCircle(0,0,12);circle.endFill();
+        circle.lineStyle(2,0xffd700,0.8);circle.drawCircle(0,0,12);
+        circle.x=CW/2;circle.y=CH+18;
+        cont.addChild(circle);
+
+        const num=new PIXI.Text(String(i+1),{fontSize:14,fontWeight:'bold',fill:0x1a1a2e,fontFamily:'Arial'});
+        num.anchor.set(0.5);num.x=CW/2;num.y=CH+18;
+        cont.addChild(num);
+
+        cont.x=50+col*(CW+GAP);
+        cont.y=140+row*(CH+GAP+22);
+        cont.interactive=true;cont.cursor='pointer';
+        cont.hitArea=new PIXI.Rectangle(-CW/2,(-CH-20)/2,CW,CH+30);
+        const id=i;
+        cont.on('pointerdown',()=>click(id));
+        cont.on('pointerover',()=>{cont.scale.set(1.06)});
+        cont.on('pointerout',()=>{cont.scale.set(1)});
+
+        boxLayer.addChild(cont);
+        items.push({cont,spr,circle,num,id:i,amount:st.boxes[i].amt,opened:false});
+    }
+}
+
+function click(i){
+    if(st.ov)return;const b=st.boxes[i];if(b.open||b.chosen)return;
+    if(st.ch<0)pick(i);else if(i!==st.ch&&st.op<st.to)open(i);
+}
+
+function pick(i){
+    st.ch=i;st.boxes[i].chosen=true;st.rd=1;st.to=RB[0];st.op=0;
+    const it=items[i];it.chosen=true;
+    // 选中箱子从网格消失
+    it.cont.visible=false;
+    showPedestal();
+    shuffleBoxes();
+    statusTxt.text='第1轮 · 还需打开6个宝箱';st.coins+=10;coinTxt.text='🪙 '+st.coins;
+}
+
+function shuffleBoxes(){
+    const COLS=6,CW=100,GAP=18,H=76;
+    // 所有网格位置
+    const allSlots=[];
+    for(let r=0;r<5;r++)for(let c=0;c<COLS;c++)allSlots.push({x:50+c*(CW+GAP),y:140+r*(H+GAP+22)});
+    // 统计剩余箱子数量
+    const remaining=items.filter(it=>!it.opened&&it.id!==st.ch&&it.cont.visible);
+    // 随机打乱剩余箱子
+    for(let k=remaining.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[remaining[k],remaining[j]]=[remaining[j],remaining[k]]}
+    // 随机打乱前N个格子位置
+    const slots=allSlots.slice(0,remaining.length);
+    for(let k=slots.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[slots[k],slots[j]]=[slots[j],slots[k]]}
+
+    remaining.forEach((it,i)=>{
+        const target=slots[i];
+        const sx=it.cont.x,sy=it.cont.y,sr=it.cont.rotation;
+        let t=0;const dur=0.5;
+        function anim(){
+            t+=0.016;const p=Math.min(t/dur,1),e=1-Math.pow(1-p,3);
+            it.cont.x=sx+(target.x-sx)*e;it.cont.y=sy+(target.y-sy)*e;
+            it.cont.rotation=sr*(1-e)+Math.sin(p*Math.PI)*0.3;
+            if(p<1)requestAnimationFrame(anim);else{
+                it.cont.x=target.x;it.cont.y=target.y;it.cont.rotation=0;
+                if(!it.opened&&it.id!==st.ch){it.spr.tint=0xffffff;it.spr.alpha=1;}
+            }
+        }
+        anim();
+    });
+}
+
+function open(i){
+    const b=st.boxes[i];b.open=true;st.op++;
+    const it=items[i];it.opened=true;
+    popAmt(b.amt);updateBoard();
+    setTimeout(()=>{it.cont.visible=false;shuffleBoxes()},500);
+    st.coins+=HI.has(b.amt)?50:5;coinTxt.text='🪙 '+st.coins;
+    const rem=st.boxes.filter(x=>!x.open&&!x.chosen).length;
+    const delay=3500;
+    if(st.op>=st.to&&rem>0)setTimeout(offer,delay);
+    else if(!rem)setTimeout(end,delay);
+    else setTimeout(()=>{statusTxt.text='第'+st.rd+'轮 · 还需打开'+(st.to-st.op)+'个'},delay);
+}
+
+function popAmt(amt){
+    const overlay=document.getElementById('gifOverlay');
+    const img=document.getElementById('gifImg');
+    const banner=document.getElementById('gifBanner');
+    img.src='';img.src='box_opening_animation.gif';
+    banner.textContent=fm(amt);
+    banner.style.color=HI.has(amt)?'#ff6644':'#ffd700';
+    overlay.style.display='flex';banner.style.display='none';
+    setTimeout(()=>{banner.style.display='block';playOpenSound(amt)},1200);
+    setTimeout(()=>{overlay.style.display='none'},3500);
+}
+
+function calcOffer(){
+    const v=st.boxes.filter(x=>!x.open||x.chosen).map(x=>x.amt);
+    const avg=v.reduce((a,b)=>a+b,0)/v.length;
+    const maxVal=Math.max(...v);
+    // 折扣率随剩余箱子减少而升高(0.25→0.85)
+    const f=0.25+0.6*(1-(v.length-1)/25);
+    // 上限：不超过最高剩余金额的75%
+    const cap=maxVal*0.75;
+    const raw=avg*f*(0.85+Math.random()*0.3);
+    const o=Math.min(raw,cap);
+    return o>=1000?Math.round(o/100)*100:o>=100?Math.round(o/10)*10:Math.round(o*10)/10;
+}
+function offer(){const o=calcOffer();statusTxt.text='🏦 银行家报价 '+fm(o);showOfferUI(o)}
+function doDeal(v){st.earn=v;st.ov=true;st.coins+=v>st.boxes[st.ch].amt?100:20;coinTxt.text='🪙 '+st.coins;end()}
+function doNext(){const r=st.boxes.filter(x=>!x.open&&!x.chosen).length;if(!r){st.ov=true;end();return}st.rd++;st.to=st.rd<=RB.length?RB[st.rd-1]:1;st.to=Math.min(st.to,r);st.op=0;statusTxt.text='第'+st.rd+'轮 · 还需打开'+st.to+'个'}
+function doCounter(ca){
+    if(st.bg){statusTxt.text='还价已用过！';setTimeout(doNext,800);return}
+    st.bg=true;
+    const v=st.boxes.filter(x=>!x.open||x.chosen).map(x=>x.amt);
+    const avg=v.reduce((a,b)=>a+b,0)/v.length;
+    const p=ca<=avg*0.7?0.85:ca<=avg?0.5:ca<=avg*1.5?0.2:0.05;
+    const result=Math.random()<p;
+    // 显示反馈
+    offerLayer.removeChildren();
+    const mask=new PIXI.Graphics();mask.beginFill(0x000000,0.85);mask.drawRect(0,0,W,H);mask.endFill();
+    offerLayer.addChild(mask);
+    const card=new PIXI.Graphics();
+    card.beginFill(result?0x1a3020:0x301a1a);card.drawRoundedRect(0,0,300,140,16);card.endFill();
+    card.lineStyle(2,result?0x27ae60:0xe74c3c,0.6);card.drawRoundedRect(0,0,300,140,16);
+    card.x=W/2-150;card.y=H/2-70;offerLayer.addChild(card);
+    const icon=new PIXI.Text(result?'🤝':'🙅',{fontSize:40});
+    icon.anchor.set(0.5);icon.x=W/2;icon.y=H/2-40;offerLayer.addChild(icon);
+    const msg=new PIXI.Text(result?'还价成功！成交！':'银行家拒绝了',{fontSize:20,fontWeight:'bold',fill:result?0x27ae60:0xe74c3c,fontFamily:'Arial'});
+    msg.anchor.set(0.5);msg.x=W/2;msg.y=H/2+5;offerLayer.addChild(msg);
+    const amt=new PIXI.Text(fm(ca),{fontSize:18,fill:0x999999,fontFamily:'Arial'});
+    amt.anchor.set(0.5);amt.x=W/2;amt.y=H/2+30;offerLayer.addChild(amt);
+    offerLayer.visible=true;app.stage.setChildIndex(offerLayer,app.stage.children.length-1);
+
+    if(window._feedbackTimer)clearTimeout(window._feedbackTimer);
+    window._feedbackTimer=setTimeout(()=>{offerLayer.visible=false},1500);
+    if(result){st.earn=ca;st.ov=true;st.coins+=50;coinTxt.text='🪙 '+st.coins;setTimeout(end,1800)}
+    else{setTimeout(doNext,1600)}
+}
+function end(){const pa=st.boxes[st.ch].amt,ea=st.earn||pa;
+    pedQ.text=fm(pa);pedQ.style.fill=0xe8d48b;restartBtn.visible=true;
+    statusTxt.text='宝箱里是 '+fm(pa)+(st.earn?(ea>pa?'净赚'+fm(ea-pa):'亏了'+fm(pa-ea)):'');
+    // 判断结局音效
+    const isWin=st.earn?(ea>pa):(pa>=100000);
+    const isLose=st.earn?(ea<pa):(pa<1000);
+    const src=isWin?'win.mp3':isLose?'lose.mp3':'normal.mp3';
+    const ea2=new Audio(src);ea2.play().catch(()=>{});
+    setTimeout(()=>{ea2.pause();ea2.remove()},5000);}
+document.addEventListener('keydown',e=>{if(!window._o)return;const o=window._o;window._o=null;if(e.key==='y')doDeal(o);if(e.key==='n')doNext();if(e.key==='c')showCounterInput()});
+
+// 启动
+function init(){
+    st.boxes=sh(AM).map((a,i)=>({id:i,amt:a,open:false,chosen:false}));
+    st.ch=-1;st.rd=0;st.to=0;st.op=0;st.bg=false;st.ov=false;st.earn=0;
+    pedestal.visible=false;pedQ.text='?';restartBtn.visible=false;
+    statusTxt.text='🎯 选择一个宝箱';coinTxt.text='🪙 '+st.coins;
+    createBoxes();createBoard();
+}
+
+</script>
+</body>
+</html>
