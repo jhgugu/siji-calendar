@@ -1,0 +1,54 @@
+=== 白日梦想家 · 公文箱 AI 生成提示词 ===
+
+用 Midjourney / DALL-E 3 / Stable Diffusion 生成 26 个公文箱
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 基础 Prompt（每个箱子用这个，改编号和颜色）：
+
+"A luxurious leather briefcase, front view, royal game show style,
+dark wood and gold metal trim, brass nameplate with number [N] engraved,
+soft dramatic spotlight on black background, hyper-realistic 3D render,
+octane render, 8K, product photography, centered, clean silhouette"
+
+颜色变体（每 5-6 个箱子换一种皮革色）：
+- 01-06: "deep burgundy leather"（深酒红皮革）
+- 07-12: "midnight blue leather"（午夜蓝皮革）
+- 13-18: "emerald green leather"（祖母绿皮革）
+- 19-24: "chocolate brown leather"（巧克力棕皮革）
+- 25-26: "premium black leather with gold diamond pattern"（黑金菱格）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 具体 Prompt 示例（箱子 #15）：
+
+"A luxurious leather briefcase with emerald green leather body,
+gold-plated metal corners and hinges, brass nameplate engraved with
+large silver number '15' in the center, royal game show aesthetic,
+spotlit on a dark velvet background, hyper-realistic 3D render,
+octane render engine, 8K resolution, product photography style,
+perfectly centered, clean sharp edges, cinematic lighting"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📐 技术要求：
+- 分辨率: 512x512 或 1024x1024
+- 格式: PNG（透明背景）或 PNG（黑色背景可后期去掉）
+- 风格: 必须统一！一次性把所有 Prompt 发给 AI
+- 数量: 生成 26 张，编号 01.png 到 26.png
+- 放到: D:\projects\白日梦想家\cases\
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🖼️ 已选出（玩家的那个箱子）也生成一张：
+"An elegant leather briefcase glowing with soft green light,
+white gold metal trim, brass nameplate with '?' engraved,
+mysterious and precious, hyper-realistic 3D render, 8K"
+保存为: chosen.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 省钱技巧：
+- 用 Midjourney 先跑几张看效果
+- 满意后批量生成
+- 或去 Freepik 下载 3D 公文箱模板，自己 PS 改编号

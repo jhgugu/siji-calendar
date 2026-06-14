@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎨 美女主持 · Rive 演示</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a14;font-family:'PingFang SC','Microsoft YaHei',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:20px}
+.info{text-align:center;max-width:600px;line-height:1.8}
+.info h2{color:#ffd700;margin-bottom:10px}
+.info p{color:#aaa;font-size:14px}
+canvas{border:1px solid rgba(255,215,0,0.2);border-radius:12px}
+.buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{padding:10px 20px;border-radius:20px;border:1px solid rgba(255,215,0,0.3);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;font-size:14px;transition:0.2s}
+button:hover{background:rgba(255,215,0,0.1)}
+button.active{background:#ffd700;color:#1a1a3e;border-color:#ffd700}
+.note{color:#888;font-size:12px;margin-top:10px}
+</style>
+</head>
+<body>
+
+<h2>🎨 美女主持 · Rive 动画引擎</h2>
+<div class="info">
+    <p>当前演示角色已用 <b style="color:#ffd700">Rive 社区</b> 的免费动画加载</p>
+    <p>如果没有 .riv 文件，会回退到 <b style="color:#4af">SVG 精美角色</b></p>
+</div>
+
+<div id="hostArea" style="width:260px;height:400px;display:flex;align-items:center;justify-content:center;position:relative">
+    <!-- Rive Canvas -->
+    <canvas id="riveCanvas" width="260" height="400" style="display:none"></canvas>
+    <!-- SVG 回退角色 -->
+    <svg id="svgHost" viewBox="0 0 200 380" width="200" height="380">
+        <!-- 头发后层 -->
+        <ellipse cx="100" cy="75" rx="55" ry="90" fill="var(--hair,#f0d8a0)"/>
+        <rect x="30" y="60" width="140" height="160" rx="8" fill="var(--hair,#f0d8a0)"/>
+        <!-- 手臂 -->
+        <ellipse cx="45" cy="170" rx="12" ry="40" fill="var(--skin,#fce4d6)" transform="rotate(-10,45,170)"/>
+        <ellipse cx="155" cy="170" rx="12" ry="40" fill="var(--skin,#fce4d6)" transform="rotate(10,155,170)"/>
+        <!-- 腿 -->
+        <rect x="72" y="220" width="24" height="110" rx="10" fill="var(--skin,#fce4d6)"/>
+        <rect x="104" y="220" width="24" height="110" rx="10" fill="var(--skin,#fce4d6)"/>
+        <!-- 鞋 -->
+        <ellipse cx="72" cy="335" rx="18" ry="10" fill="var(--shoe,#2c2c2c)"/>
+        <ellipse cx="128" cy="335" rx="18" ry="10" fill="var(--shoe,#2c2c2c)"/>
+        <!-- 裙子 -->
+        <path d="M50,180 Q100,160 150,180 L160,250 Q100,270 40,250 Z" fill="var(--dress,#4a90d9)"/>
+        <path d="M55,180 Q100,170 145,180" stroke="var(--dressDark,#3570b0)" stroke-width="3" fill="none"/>
+        <!-- 脖子 -->
+        <rect x="88" y="130" width="24" height="20" rx="5" fill="var(--skin,#fce4d6)"/>
+        <!-- 脸 -->
+        <ellipse cx="100" cy="120" rx="35" ry="40" fill="var(--skin,#fce4d6)"/>
+        <!-- 腮红 -->
+        <ellipse cx="78" cy="128" rx="10" ry="5" fill="rgba(255,150,150,0.3)"/>
+        <ellipse cx="122" cy="128" rx="10" ry="5" fill="rgba(255,150,150,0.3)"/>
+        <!-- 眼睛 -->
+        <ellipse cx="88" cy="115" rx="6" ry="8" fill="#1a1a2e"/>
+        <ellipse cx="112" cy="115" rx="6" ry="8" fill="#1a1a2e"/>
+        <circle cx="90" cy="112" r="2" fill="#fff"/>
+        <circle cx="114" cy="112" r="2" fill="#fff"/>
+        <!-- 眉毛 -->
+        <path d="M80,105 Q88,100 96,106" stroke="var(--hairDark,#d4b070)" stroke-width="2" fill="none"/>
+        <path d="M104,106 Q112,100 120,105" stroke="var(--hairDark,#d4b070)" stroke-width="2" fill="none"/>
+        <!-- 嘴 -->
+        <path d="M94,132 Q100,138 106,132" stroke="#c97" stroke-width="1.5" fill="#e88" fill-opacity="0.3"/>
+        <!-- 头发前层 -->
+        <path d="M50,90 Q60,30 100,20 Q140,30 150,90 Q145,60 140,80 Q130,35 100,30 Q70,35 60,80 Q55,60 50,90Z" fill="var(--hair,#f0d8a0)"/>
+        <!-- 刘海 -->
+        <path d="M55,85 Q65,40 85,50 Q75,70 60,85Z" fill="var(--hairDark,#d4b070)" opacity="0.3"/>
+        <path d="M115,50 Q135,40 145,85 Q140,70 130,50Z" fill="var(--hairDark,#d4b070)" opacity="0.3"/>
+    </svg>
+</div>
+
+<div class="buttons">
+    <button id="btnIdle" class="active">🧍 站立</button>
+    <button id="btnWalk">🚶 走路</button>
+    <button id="btnWave">👋 挥手</button>
+    <button id="btnBow">🙇 鞠躬</button>
+</div>
+
+<p class="note">
+    📌 下载 .riv 角色文件放到项目文件夹 → 自动切换为迪士尼级动画<br>
+    去 <a href="https://rive.app/community/characters" target="_blank" style="color:#ffd700">rive.app/community</a> 浏览免费角色
+</p>
+
+<script>
+// ==================== Rive 运行时 ====================
+let riveInstance=null;
+let riveAvailable=false;
+
+// 尝试加载Rive
+async function initRive(){
+    try{
+        const {default:Rive}=await import('https://unpkg.com/@rive-app/canvas@2.25.7/rive.js');
+        const resp=await fetch('./host.riv');
+        if(!resp.ok)throw new Error('未找到 host.riv');
+        const bytes=new Uint8Array(await resp.arrayBuffer());
+        riveInstance=new Rive({
+            src:bytes,canvas:document.getElementById('riveCanvas'),autoplay:true,
+            stateMachines:'State Machine 1',
+            onLoad:()=>{riveAvailable=true;document.getElementById('riveCanvas').style.display='';document.getElementById('svgHost').style.display='none';riveInstance.resizeDrawingSurfaceToCanvas()}
+        });
+    }catch(e){console.log('Rive未加载，使用SVG回退',e.message)}
+}
+initRive();
+
+// ==================== SVG 动画 ====================
+const svg=document.getElementById('svgHost');
+const parts={
+    leftArm:svg.querySelectorAll('ellipse')[2],   // 左臂
+    rightArm:svg.querySelectorAll('ellipse')[3],  // 右臂
+    body:svg.querySelectorAll('path')[0],          // 裙子
+    head:svg.querySelectorAll('ellipse')[7],       // 脸
+};
+
+let animId=null;
+function stopAnim(){if(animId){cancelAnimationFrame(animId);animId=null}}
+
+function setIdle(){
+    stopAnim();let t=0;
+    function loop(){t+=0.02;svg.style.transform=`translateY(${Math.sin(t)*3}px)`;animId=requestAnimationFrame(loop)}loop();
+    document.querySelectorAll('.buttons button').forEach(b=>b.classList.remove('active'));document.getElementById('btnIdle').classList.add('active');
+}
+
+function setWalk(){
+    stopAnim();let t=0;
+    function loop(){t+=0.08;svg.style.transform=`translateX(${Math.sin(t*0.5)*20}px) translateY(${Math.abs(Math.sin(t))*4}px)`;animId=requestAnimationFrame(loop)}loop();
+    document.querySelectorAll('.buttons button').forEach(b=>b.classList.remove('active'));document.getElementById('btnWalk').classList.add('active');
+}
+
+function setWave(){
+    stopAnim();let t=0;
+    function loop(){t+=0.06;svg.style.transform=`translateY(${Math.sin(t)*2}px)`;const arm=svg.querySelectorAll('ellipse')[3];if(arm)arm.setAttribute('transform',`rotate(${20+Math.sin(t*2)*25},155,170)`);animId=requestAnimationFrame(loop)}loop();
+    document.querySelectorAll('.buttons button').forEach(b=>b.classList.remove('active'));document.getElementById('btnWave').classList.add('active');
+}
+
+function setBow(){
+    stopAnim();let t=0;
+    function loop(){t+=0.03;const tilt=Math.sin(t)*15;svg.style.transform=`rotate(${tilt}deg)`;if(t>Math.PI*2){svg.style.transform='rotate(0deg)';stopAnim();setIdle();return}animId=requestAnimationFrame(loop)}loop();
+    document.querySelectorAll('.buttons button').forEach(b=>b.classList.remove('active'));document.getElementById('btnBow').classList.add('active');
+}
+
+document.getElementById('btnIdle').addEventListener('click',setIdle);
+document.getElementById('btnWalk').addEventListener('click',setWalk);
+document.getElementById('btnWave').addEventListener('click',setWave);
+document.getElementById('btnBow').addEventListener('click',setBow);
+
+setIdle();
+</script>
+</body>
+</html>

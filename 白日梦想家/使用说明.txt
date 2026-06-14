@@ -1,0 +1,23 @@
+=== 白日梦想家 · Daydreamer ===
+Deal or No Deal 风格游戏
+
+📁 文件说明：
+  daydreamer.html  → 游戏主程序（双击打开）
+  rive-host.html   → Rive 动画角色演示
+  rive.js          → Rive 动画引擎
+
+🎮 玩法：
+  1. 26个宝箱，金额 $0.1 ~ $1,000,000
+  2. 选一个宝箱 → 分轮次开箱 → 银行家报价
+  3. 可接受报价 / 拒绝 / 还价（1次机会）
+  4. 美女主持 + 开箱动画 + 音效
+
+🎭 角色系统：
+  5位西方美女可解锁（需要梦想币）
+  Sophia(免费) → Isabella(500) → Olivia(1000) → Elena(2000) → Victoria(5000)
+
+🎨 升级Rive迪士尼级角色：
+  1. 去 rive.app/community 下载 .riv 角色文件
+  2. 保存为 host.riv 放到本文件夹
+  3. 打开 rive-host.html 预览
+  4. 用记事本打开 daydreamer.html 搜索 "host.riv" 改为你的文件名

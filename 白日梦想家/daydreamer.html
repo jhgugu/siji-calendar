@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>💼 白日梦想家 · Daydreamer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,900;1,600&family=Cormorant+Garamond:wght@600;700&display=swap');
+
+:root{
+    --gold:#c4a44a;--g1:#e8d48b;--g2:#c4a44a;--g3:#8b6914;--g4:#5a3e0a;
+    --bg:#080814;--s1:#0e0e24;--s2:#141430;
+    --velvet:#1a0a20;--stage:#0d0d1a;
+    --leather1:#2a1a0a;--leather2:#1a0e04;--leather3:#3a2a14;
+    --text:#d8d0c0;--dim:rgba(255,255,255,0.35);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ====== 背景系统 ====== */
+body{
+    background:var(--bg);
+    font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+    min-height:100vh;color:var(--text);overflow-x:hidden;
+}
+/* 剧院帷幕 */
+.stage-curtains{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.curtain-left,.curtain-right{
+    position:absolute;top:0;width:28%;height:100%;
+    background:linear-gradient(180deg,#0a0010 0%,#1a0020 15%,#2a1035 40%,#1a0020 70%,#0a0010 100%);
+}
+.curtain-left{left:0;border-right:3px solid rgba(180,140,50,0.15);box-shadow:inset -20px 0 40px rgba(0,0,0,0.5),8px 0 15px rgba(0,0,0,0.3)}
+.curtain-right{right:0;border-left:3px solid rgba(180,140,50,0.15);box-shadow:inset 20px 0 40px rgba(0,0,0,0.5),-8px 0 15px rgba(0,0,0,0.3)}
+/* 帷幕褶皱 */
+.curtain-left::before{content:'';position:absolute;left:15%;top:0;width:3px;height:100%;background:rgba(180,140,50,0.04)}
+.curtain-left::after{content:'';position:absolute;left:35%;top:0;width:2px;height:100%;background:rgba(180,140,50,0.03)}
+.curtain-right::before{content:'';position:absolute;right:15%;top:0;width:3px;height:100%;background:rgba(180,140,50,0.04)}
+.curtain-right::after{content:'';position:absolute;right:35%;top:0;width:2px;height:100%;background:rgba(180,140,50,0.03)}
+/* 帷幕顶部装饰 */
+.curtain-top{position:absolute;top:0;left:0;width:100%;height:80px;background:linear-gradient(180deg,rgba(10,0,20,0.95) 0%,rgba(20,5,30,0.8) 60%,transparent 100%);border-bottom:1px solid rgba(180,140,50,0.08);z-index:1}
+.curtain-top::after{content:'';position:absolute;bottom:0;left:25%;right:25%;height:1px;background:linear-gradient(90deg,transparent,rgba(200,160,60,0.2),transparent)}
+/* 舞台聚光灯 */
+.spotlight{position:fixed;top:-10%;left:50%;transform:translateX(-50%);width:700px;height:120%;background:radial-gradient(ellipse at 50% 0%,rgba(200,160,80,0.04) 0%,rgba(180,140,60,0.02) 30%,transparent 60%);pointer-events:none;z-index:0}
+/* 金色浮尘 */
+.dust-particle{position:fixed;pointer-events:none;z-index:0;background:var(--g1);border-radius:50%;animation:dustFloat 5s ease-in-out infinite}
+@keyframes dustFloat{0%,100%{opacity:0;transform:translate(0,0)}20%{opacity:0.6}50%{opacity:0.3;transform:translate(15px,-40px)}80%{opacity:0.1}100%{opacity:0;transform:translate(-10px,-80px)}}
+
+/* ====== 主容器 ====== */
+.container{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:24px 18px 50px}
+
+/* ====== 标题 ====== */
+.header{text-align:center;padding:8px 0 20px;position:relative}
+.header h1{font-family:'Playfair Display','STSong',serif;font-size:42px;font-weight:900;letter-spacing:8px;color:var(--g1);text-shadow:0 0 60px rgba(200,160,80,0.35),0 2px 4px rgba(0,0,0,0.6),0 0 0 1px rgba(0,0,0,0.3);position:relative;display:inline-block}
+.header h1::after{content:'';position:absolute;bottom:-6px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--g2),var(--g1),var(--g2),transparent)}
+.header .tagline{font-family:'Cormorant Garamond',serif;font-size:13px;color:rgba(200,160,80,0.4);letter-spacing:10px;text-transform:uppercase;margin-top:8px}
+
+/* ====== 顶栏 ====== */
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 0;margin-bottom:4px}
+.coins{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--g2);font-weight:600;background:rgba(0,0,0,0.3);padding:6px 14px;border-radius:20px;border:1px solid rgba(180,140,60,0.15)}
+.coins .coin{width:20px;height:20px;background:radial-gradient(circle at 40% 40%,#ffeaa0,#c4a44a 60%,#8b6914);border-radius:50%;box-shadow:0 0 8px rgba(200,160,80,0.4)}
+.shop-trigger{background:rgba(255,255,255,0.03);border:1px solid rgba(180,140,60,0.2);color:rgba(255,255,255,0.5);padding:6px 16px;border-radius:18px;cursor:pointer;font-size:11px;letter-spacing:2px;transition:0.3s}
+.shop-trigger:hover{background:rgba(200,160,80,0.08);border-color:rgba(200,160,80,0.4);color:var(--g1)}
+
+/* ====== 状态栏 ====== */
+.status{text-align:center;padding:10px;margin:8px 0;font-size:13px;color:var(--dim);letter-spacing:2px}
+.status b{color:var(--g1);font-size:15px}
+
+/* ====== 展示台 ====== */
+.pedestal-wrap{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 20px;margin:10px auto;max-width:420px;position:relative}
+.pedestal-wrap::before{content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(200,160,80,0.2),transparent)}
+.pedestal-label{font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:3px}
+/* SVG 展示公文箱 */
+.chosen-case{width:64px;height:48px;position:relative;filter:drop-shadow(0 8px 20px rgba(100,200,100,0.25))}
+
+/* ====== 主体布局 ====== */
+.main-layout{display:flex;gap:14px;align-items:flex-start}
+.cases-area{flex:1;min-width:0}
+.board-side{width:160px;flex-shrink:0}
+@media(max-width:540px){.main-layout{flex-direction:column}.board-side{width:100%}}
+
+/* ====== 公文箱网格 ====== */
+.cases-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;perspective:600px}
+@media(min-width:460px){.cases-grid{grid-template-columns:repeat(5,1fr)}}
+@media(min-width:640px){.cases-grid{grid-template-columns:repeat(6,1fr);gap:12px}}
+
+/* 宝箱卡片 */
+.case{
+    aspect-ratio:1;border-radius:14px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:visible;
+    background:transparent;border:none;box-shadow:none;
+    transition:all 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.case svg{width:90%;height:90%;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.5));transition:all 0.35s}
+.case:hover{transform:translateY(-6px)}
+.case:hover svg{filter:drop-shadow(0 12px 24px rgba(0,0,0,0.6)) drop-shadow(0 0 12px rgba(200,160,80,0.15))}
+/* 宝箱呼吸动画 */
+.case svg .chest-body{animation:chestBreathe 3s ease-in-out infinite}
+.case svg .gold-sparkle{animation:goldSpark 2s ease-in-out infinite}
+@keyframes chestBreathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.015)}}
+@keyframes goldSpark{0%,100%{opacity:0.3}50%{opacity:0.7}}
+.case.off{opacity:0.32;cursor:default;transform:none!important;pointer-events:none}
+.case.off svg{filter:grayscale(0.5) brightness(0.4) drop-shadow(0 2px 4px rgba(0,0,0,0.3))!important}
+.case.off::after{content:'';position:absolute;left:10%;right:10%;top:50%;height:2px;background:rgba(255,255,255,0.25);z-index:5;border-radius:1px}
+.case.picked{opacity:0.16;cursor:default;transform:none!important;pointer-events:none}
+.case.picked svg{filter:grayscale(0.8) brightness(0.3)!important}
+.case.fly{animation:flyUp 0.5s cubic-bezier(0.25,0.46,0.45,0.94) forwards;pointer-events:none}
+@keyframes flyUp{0%{transform:scale(1);opacity:1}60%{transform:scale(1.1);opacity:0.6}100%{transform:scale(0.5) translateY(-40px);opacity:0}}
+.case.locked{cursor:not-allowed;opacity:0.55}
+.case.locked:hover{transform:none}
+.case .num-tag{position:absolute;bottom:4px;z-index:3;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.7);font-size:9px;padding:1px 6px;border-radius:2px;letter-spacing:1px}
+
+/* ====== 金额记分板 ====== */
+.scoreboard{
+    background:linear-gradient(180deg,rgba(10,8,20,0.9),rgba(15,12,25,0.95));
+    border:1px solid rgba(180,140,60,0.12);border-radius:12px;
+    padding:14px 10px;backdrop-filter:blur(12px);
+    box-shadow:inset 0 0 30px rgba(0,0,0,0.4),0 4px 20px rgba(0,0,0,0.3);
+}
+.scoreboard h3{font-size:10px;color:rgba(200,160,80,0.35);text-align:center;letter-spacing:4px;margin-bottom:10px}
+.sb-cols{display:flex;gap:4px}
+.sb-col{flex:1;display:flex;flex-direction:column;gap:2px}
+.sb-item{font-size:10px;font-weight:500;text-align:center;padding:5px 2px;border-radius:3px;transition:0.3s;font-variant-numeric:tabular-nums;font-family:'SF Mono','Consolas',monospace}
+.sb-item.lit{background:rgba(180,140,60,0.1);color:var(--g1);border:1px solid rgba(180,140,60,0.15)}
+.sb-item.dim{background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.15);text-decoration:line-through}
+.sb-item.hot{background:rgba(255,100,50,0.1);color:#ff9966;border:1px solid rgba(255,100,50,0.2);animation:hotGlow 2s ease-in-out infinite}
+@keyframes hotGlow{0%,100%{box-shadow:0 0 4px rgba(255,100,50,0.1)}50%{box-shadow:0 0 10px rgba(255,100,50,0.25)}}
+
+/* ====== 报价弹窗 ====== */
+.offer-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);animation:fadeIn 0.3s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.offer-card{
+    background:linear-gradient(180deg,#181835,#0e0e24);border:2px solid rgba(200,160,80,0.25);
+    border-radius:24px;padding:36px 28px;max-width:400px;width:94%;text-align:center;
+    box-shadow:0 40px 80px rgba(0,0,0,0.6),0 0 60px rgba(200,160,80,0.05),inset 0 1px 0 rgba(255,255,255,0.02);
+    animation:cardPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden;
+}
+@keyframes cardPop{from{transform:translateY(60px) scale(0.85);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.offer-card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(200,160,80,0.3),transparent)}
+.offer-card::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(200,160,80,0.15),transparent)}
+.offer-icon{font-size:40px;margin-bottom:4px}
+.offer-label{font-size:11px;color:rgba(200,160,80,0.45);letter-spacing:5px;margin-bottom:4px}
+.offer-amount{font-family:'Playfair Display',serif;font-size:54px;font-weight:900;color:var(--g1);text-shadow:0 0 40px rgba(200,160,80,0.35);margin:6px 0;letter-spacing:2px}
+.offer-hint{font-size:11px;color:rgba(255,255,255,0.25);margin-bottom:22px}
+.offer-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.offer-btns button{padding:12px 26px;border-radius:25px;border:none;font-size:14px;cursor:pointer;font-weight:600;letter-spacing:1px;transition:0.3s}
+.btn-pass{background:transparent;color:rgba(255,255,255,0.35);border:1px solid rgba(255,255,255,0.08)}
+.btn-pass:hover{color:#fff;border-color:rgba(255,255,255,0.2)}
+.btn-deal{background:linear-gradient(180deg,#2ecc71,#27ae60);color:#fff;box-shadow:0 6px 20px rgba(39,174,96,0.3),inset 0 1px 0 rgba(255,255,255,0.15)}
+.btn-deal:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(39,174,96,0.45)}
+.btn-haggle{background:linear-gradient(180deg,#f39c12,#e67e22);color:#fff;box-shadow:0 6px 20px rgba(230,126,34,0.3),inset 0 1px 0 rgba(255,255,255,0.15)}
+.btn-haggle:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(230,126,34,0.45)}
+
+.haggle-area{margin-top:12px}
+.haggle-area input{width:100%;padding:14px;font-size:24px;text-align:center;border:2px solid rgba(243,156,18,0.3);border-radius:14px;background:rgba(0,0,0,0.4);color:var(--g1);outline:none;font-family:'Playfair Display',serif;transition:0.3s}
+.haggle-area input:focus{border-color:var(--g1);box-shadow:0 0 20px rgba(200,160,80,0.1)}
+
+/* ====== 开箱揭晓 ====== */
+.reveal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.93);z-index:150;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn 0.25s}
+.reveal-box{font-size:72px;animation:boxPop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards}
+@keyframes boxPop{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.reveal-val{font-family:'Playfair Display',serif;font-size:72px;font-weight:900;color:var(--g1);text-shadow:0 0 60px rgba(200,160,80,0.5);animation:valIn 0.5s 0.25s cubic-bezier(0.175,0.885,0.32,1.275) both}
+@keyframes valIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.reveal-tap{color:rgba(255,255,255,0.2);font-size:12px;margin-top:24px;animation:fadeIn 0.5s 0.6s both}
+
+/* ====== 结束弹窗 ====== */
+.end-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:200;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.5s}
+.end-card{text-align:center;padding:30px}
+.end-label{font-size:12px;color:rgba(255,255,255,0.3);letter-spacing:4px}
+.end-amount{font-family:'Playfair Display',serif;font-size:64px;font-weight:900;color:var(--g1);text-shadow:0 0 50px rgba(200,160,80,0.4);margin:14px 0}
+.end-msg{font-size:15px;color:rgba(255,255,255,0.4);margin:8px 0}
+.end-btn{margin-top:24px;padding:14px 44px;border-radius:30px;border:1px solid rgba(200,160,80,0.3);background:rgba(200,160,80,0.06);color:var(--g1);font-size:15px;cursor:pointer;letter-spacing:3px;transition:0.3s}
+.end-btn:hover{background:rgba(200,160,80,0.15);border-color:var(--g2)}
+
+/* ====== 商店 ====== */
+.shop-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:250;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.3s}
+.shop-card{background:linear-gradient(180deg,#181835,#0e0e24);border:1.5px solid rgba(200,160,80,0.2);border-radius:22px;padding:24px 20px;max-width:440px;width:95%;max-height:85vh;overflow-y:auto;text-align:center}
+.shop-card h2{font-family:'Playfair Display',serif;color:var(--g1);letter-spacing:4px;margin-bottom:6px;font-size:22px}
+.shop-coins{font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:14px}
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s-item{background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.04);border-radius:14px;padding:14px 8px;text-align:center;transition:0.25s}
+.s-item:hover{background:rgba(255,255,255,0.03)}
+.s-item.owned{border-color:rgba(39,174,96,0.25)}
+.s-item.active{border-color:var(--g2)!important;box-shadow:0 0 18px rgba(200,160,80,0.12)}
+.s-avatar{width:44px;height:44px;border-radius:50%;margin:0 auto 8px;box-shadow:inset 0 2px 4px rgba(255,255,255,0.1),0 4px 10px rgba(0,0,0,0.3)}
+.s-name{font-size:13px;font-weight:600;margin:2px 0}
+.s-desc{font-size:10px;color:rgba(255,255,255,0.25)}
+.s-price{font-size:11px;color:var(--g2);margin:6px 0}
+.s-btn{padding:5px 16px;border-radius:14px;border:none;font-size:11px;cursor:pointer;margin-top:2px;transition:0.2s}
+.s-buy{background:linear-gradient(180deg,#f39c12,#e67e22);color:#fff}
+.s-equip{background:linear-gradient(180deg,#2ecc71,#27ae60);color:#fff}
+.s-none{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.2);cursor:default}
+.shop-close{display:block;margin:16px auto 0;padding:8px 34px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:rgba(255,255,255,0.3);cursor:pointer;font-size:13px;transition:0.2s}
+.shop-close:hover{color:#fff}
+
+/* ====== 彩带 ====== */
+.confetti{position:fixed;pointer-events:none;z-index:300;animation:confettiDrop linear forwards}
+@keyframes confettiDrop{0%{transform:translateY(-120px) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="stage-curtains">
+    <div class="curtain-left"></div><div class="curtain-right"></div>
+    <div class="curtain-top"></div>
+</div>
+<div class="spotlight"></div>
+<div id="dustContainer"></div>
+
+<!-- 开箱揭晓 -->
+<div class="reveal-overlay" id="boxReveal" style="display:none">
+    <div id="revealImg" style="width:140px;height:140px;animation:boxPop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards"></div>
+    <div class="reveal-val" id="revealVal">$0</div>
+    <div class="reveal-tap">轻触关闭</div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h1>白日梦想家</h1>
+        <div class="tagline">Daydreamer</div>
+    </div>
+
+    <div class="top-bar">
+        <div class="coins"><div class="coin"></div><span id="coinDisplay">0</span> 梦想币</div>
+        <button class="shop-trigger" id="btnShop">角色商店</button>
+    </div>
+
+    <div class="status" id="statusBar">请选择一个公文箱</div>
+
+    <div class="pedestal-wrap" id="pedestal" style="display:none">
+        <span class="pedestal-label">你 的 箱 子</span>
+        <div class="chosen-case" id="chosenCase" style="width:70px;height:70px">
+            <!-- JS动态填充SVG宝箱 -->
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="cases-area"><div class="cases-grid" id="casesGrid"></div></div>
+        <div class="board-side"><div class="scoreboard" id="scoreboard"></div></div>
+    </div>
+</div>
+
+<!-- 报价 -->
+<div class="offer-overlay" id="offerOverlay" style="display:none">
+    <div class="offer-card">
+        <div class="offer-icon">🏦</div>
+        <div class="offer-label">银 行 家 报 价</div>
+        <div class="offer-amount" id="offerValue">$0</div>
+        <div class="offer-hint" id="offerHint"></div>
+        <div id="haggleWrap" style="display:none" class="haggle-area">
+            <input type="number" id="haggleInput" placeholder="你的还价">
+            <div class="offer-btns" style="margin-top:10px"><button class="btn-haggle" id="btnDoHaggle">提交</button><button class="btn-pass" id="btnCancelHaggle">取消</button></div>
+        </div>
+        <div class="offer-btns" id="offerBtns">
+            <button class="btn-pass" id="btnNo">拒绝</button>
+            <button class="btn-deal" id="btnYes">成交</button>
+            <button class="btn-haggle" id="btnHaggle">还价</button>
+        </div>
+    </div>
+</div>
+
+<!-- 结束 -->
+<div class="end-overlay" id="endOverlay" style="display:none">
+    <div class="end-card">
+        <div class="end-label">你 的 箱 子 里 是</div>
+        <div class="end-amount" id="endAmount">$0</div>
+        <div class="end-msg" id="endMsg"></div>
+        <button class="end-btn" onclick="restartGame()">再来一局</button>
+    </div>
+</div>
+
+<!-- 商店 -->
+<div class="shop-overlay" id="shopOverlay" style="display:none">
+    <div class="shop-card">
+        <h2>角色商店</h2>
+        <div class="shop-coins">🪙 <span id="shopCoins">0</span></div>
+        <div class="shop-grid" id="shopGrid"></div>
+        <button class="shop-close" id="shopCloseBtn">关闭</button>
+    </div>
+</div>
+
+<script>
+// ====== 尘埃粒子 ======
+(function(){const c=document.getElementById('dustContainer');for(let i=0;i<35;i++){const d=document.createElement('div');d.className='dust-particle';d.style.left=Math.random()*100+'%';d.style.top=40+Math.random()*60+'%';d.style.width=(1.5+Math.random()*2)+'px';d.style.height=d.style.width;d.style.animationDelay=Math.random()*5+'s';c.appendChild(d)}})();
+function confetti(n=40){for(let i=0;i<n;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'%';c.style.top=-20-Math.random()*30+'px';c.style.width=(5+Math.random()*10)+'px';c.style.height=(5+Math.random()*10)+'px';c.style.background=['#c4a44a','#e8d48b','#ff6b6b','#51cf66','#ff922b'][Math.floor(Math.random()*5)];c.style.borderRadius=Math.random()>0.5?'50%':'2px';c.style.animationDuration=(2+Math.random()*3)+'s';c.style.animationDelay=Math.random()*0.5+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),3500)}}
+
+// ====== 音效 ======
+let ctx=null;
+function ac(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+function beep(){try{const c=ac(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(800,t);o.frequency.exponentialRampToValueAtTime(400,t+0.15);g.gain.setValueAtTime(0.2,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.2)}catch(e){}}
+function chime(){try{const c=ac(),t=c.currentTime;[523,659,784,1047].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t+i*0.1);g.gain.setValueAtTime(0.15,t+i*0.1);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.3);o.connect(g);g.connect(c.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.3)})}catch(e){}}
+document.addEventListener('click',()=>{if(ctx&&ctx.state==='suspended')ctx.resume()},{once:true});
+
+// ====== 角色系统 ======
+const CHARS=[{id:'s',name:'Sophia',c:'#f0d8a0',price:0,d:'金发碧眼'},{id:'i',name:'Isabella',c:'#c04020',price:500,d:'红发如火'},{id:'o',name:'Olivia',c:'#3a2010',price:1000,d:'黑发紫裙'},{id:'e',name:'Elena',c:'#e8e0d0',price:2000,d:'银发金装'},{id:'v',name:'Victoria',c:'#fafafa',price:5000,d:'白金黑裙'}];
+let cur='s',owned=new Set(['s']),coins=0;
+try{const s=JSON.parse(localStorage.getItem('dd2')||'{}');coins=s.c||0;owned=new Set(s.o||['s']);cur=s.e||'s'}catch(e){}
+function sv(){localStorage.setItem('dd2',JSON.stringify({c:coins,o:[...owned],e:cur}))}
+function add(n){coins+=n;document.getElementById('coinDisplay').textContent=coins;sv()}
+function rs(){
+    const g=document.getElementById('shopGrid');g.innerHTML='';document.getElementById('shopCoins').textContent=coins;
+    CHARS.forEach(c=>{const o=owned.has(c.id),e=c.id===cur;const d=document.createElement('div');d.className='s-item'+(o?' owned':'')+(e?' active':'');
+        d.innerHTML='<div class="s-avatar" style="background:'+c.c+'"></div><div class="s-name">'+c.name+'</div><div class="s-desc">'+c.d+'</div>'+(o?('<div class="s-price" style="color:#27ae60">已拥有</div>'+(e?'<button class="s-btn s-none">使用中</button>':'<button class="s-btn s-equip" data-id="'+c.id+'">启用</button>')):('<div class="s-price">🪙'+c.price+'</div><button class="s-btn s-buy" data-id="'+c.id+'">购买</button>'));
+        d.querySelector('.s-buy')?.addEventListener('click',()=>{if(coins>=c.price){coins-=c.price;owned.add(c.id);sv();rs()}else alert('梦想币不足')});
+        d.querySelector('.s-equip')?.addEventListener('click',()=>{cur=c.id;sv();rs()});g.appendChild(d)});
+}
+
+// ====== 游戏 ======
+const AM=[0.1,1,5,10,25,50,75,100,150,200,300,400,500,1000,5000,10000,25000,50000,75000,100000,200000,300000,400000,500000,750000,1000000];
+const RB=[6,5,4,3,2,1],HI=new Set([25000,50000,75000,100000,200000,300000,400000,500000,750000,1000000]);
+let gs={bx:[],ch:-1,rd:0,to:0,op:0,bg:false,ov:false,earn:0};
+function sh(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+function fm(n){if(n>=1e6)return'$'+(n/1e6).toFixed(0)+',000,000';if(n>=1000)return'$'+n.toLocaleString('en-US');if(n>=1)return'$'+n.toFixed(0);return'$'+n.toFixed(1)}
+
+function reset(){
+    gs.bx=sh(AM).map((a,i)=>({id:i,amt:a,open:false,picked:false}));
+    gs.ch=-1;gs.rd=0;gs.to=0;gs.op=0;gs.bg=false;gs.ov=false;gs.earn=0;
+    document.getElementById('pedestal').style.display='none';document.getElementById('endOverlay').style.display='none';
+    document.getElementById('offerOverlay').style.display='none';document.getElementById('boxReveal').style.display='none';
+    ui();grid();board();
+}
+function ui(){const r=document.getElementById('statusBar');if(gs.ch<0){r.textContent='请选择一个公文箱';return}const u=gs.bx.filter(b=>!b.open&&b.id!==gs.ch).length;if(!u)return;r.innerHTML='第 <b>'+gs.rd+'</b> 轮 · 还需开 <b>'+(gs.to-gs.op)+'</b> 个 · 剩 <b>'+(u+1)+'</b> 箱'}
+function board(){
+    const s=[...AM].sort((a,b)=>a-b),op=new Set(gs.bx.filter(b=>b.open).map(b=>b.amt));
+    const mid=Math.ceil(s.length/2);let h='<h3>金 额 板</h3><div class="sb-cols">';
+    [s.slice(0,mid),s.slice(mid)].forEach(c=>{h+='<div class="sb-col">';c.forEach(a=>h+='<span class="sb-item '+(op.has(a)?'dim':HI.has(a)?'hot':'lit')+'">'+fm(a)+'</span>');h+='</div>'});h+='</div>';
+    document.getElementById('scoreboard').innerHTML=h;
+}
+// ====== 2D 动画宝箱 SVG 生成 ======
+const chestColors=[
+    {wood:'#6b3a2a',wood2:'#4a2018',lid:'#7a4230',gold:'#c4a44a',gold2:'#e8d48b'},
+    {wood:'#4a2a5a',wood2:'#301838',lid:'#5a3268',gold:'#c4a44a',gold2:'#e8d48b'},
+    {wood:'#2a4a3a',wood2:'#183028',lid:'#325a42',gold:'#c4a44a',gold2:'#e8d48b'},
+    {wood:'#5a3a1a',wood2:'#3a2210',lid:'#6b4220',gold:'#c4a44a',gold2:'#e8d48b'},
+    {wood:'#3a2a4a',wood2:'#221838',lid:'#42325a',gold:'#c4a44a',gold2:'#e8d48b'},
+];
+function chestSVG(num,colorIdx){
+    const c=chestColors[colorIdx%chestColors.length];
+    return'<svg viewBox="0 0 100 100"><defs>'+
+        '<radialGradient id="glow'+num+'"><stop offset="0%" stop-color="'+c.gold2+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+c.gold2+'" stop-opacity="0"/></radialGradient>'+
+        '<linearGradient id="wood'+num+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.lid+'"/><stop offset="50%" stop-color="'+c.wood+'"/><stop offset="100%" stop-color="'+c.wood2+'"/></linearGradient>'+
+        '<linearGradient id="metal'+num+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.gold2+'"/><stop offset="40%" stop-color="'+c.gold+'"/><stop offset="100%" stop-color="#8b6914"/></linearGradient>'+
+        '</defs>'+
+        // 辉光
+        '<ellipse cx="50" cy="85" rx="40" ry="8" fill="url(#glow'+num+')" class="gold-sparkle"/>'+
+        // 箱体
+        '<rect x="14" y="40" width="72" height="48" rx="6" fill="url(#wood'+num+')" class="chest-body"/>'+
+        // 木纹线
+        '<line x1="16" y1="52" x2="84" y2="52" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>'+
+        '<line x1="16" y1="60" x2="84" y2="60" stroke="rgba(0,0,0,0.06)" stroke-width="0.8"/>'+
+        '<line x1="16" y1="68" x2="84" y2="68" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>'+
+        '<line x1="16" y1="76" x2="84" y2="76" stroke="rgba(0,0,0,0.06)" stroke-width="0.8"/>'+
+        // 金属横带
+        '<rect x="12" y="52" width="76" height="6" rx="2" fill="url(#metal'+num+')"/>'+
+        '<rect x="12" y="78" width="76" height="5" rx="2" fill="url(#metal'+num+')"/>'+
+        // 角码
+        '<rect x="14" y="40" width="10" height="10" rx="1" fill="url(#metal'+num+')"/><rect x="76" y="40" width="10" height="10" rx="1" fill="url(#metal'+num+')"/>'+
+        '<rect x="14" y="78" width="10" height="8" rx="1" fill="url(#metal'+num+')"/><rect x="76" y="78" width="10" height="8" rx="1" fill="url(#metal'+num+')"/>'+
+        // 弧形箱盖
+        '<path d="M14 40 Q14 18 50 16 Q86 18 86 40" fill="url(#wood'+num+')" stroke="'+c.wood2+'" stroke-width="1"/>'+
+        '<path d="M14 40 Q14 22 50 20 Q86 22 86 40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>'+
+        // 箱盖金属边
+        '<path d="M14 40 Q14 18 50 16 Q86 18 86 40" fill="none" stroke="url(#metal'+num+')" stroke-width="2.5"/>'+
+        // 锁扣
+        '<rect x="42" y="38" width="16" height="10" rx="2" fill="url(#metal'+num+')"/>'+
+        '<circle cx="50" cy="43" r="3" fill="'+c.wood2+'"/>'+
+        '<circle cx="50" cy="43" r="1.5" fill="'+c.gold2+'" class="gold-sparkle"/>'+
+        // 名牌
+        '<rect x="36" y="58" width="28" height="12" rx="2" fill="rgba(0,0,0,0.3)" stroke="url(#metal'+num+')" stroke-width="0.8"/>'+
+        '<text x="50" y="67" text-anchor="middle" fill="'+c.gold2+'" font-size="9" font-weight="700" font-family="serif">'+(num<10?'0':'')+num+'</text>'+
+        '</svg>';
+}
+
+function grid(){
+    const g=document.getElementById('casesGrid');g.innerHTML='';
+    gs.bx.forEach(b=>{const d=document.createElement('div');d.className='case';
+        const ci=(b.id)%chestColors.length;
+        if(b.picked){d.classList.add('picked');d.innerHTML='<span style="font-size:10px;opacity:0.1">已选</span>'}
+        else if(b.open){d.classList.add('off');d.innerHTML=chestSVG(b.id+1,ci)+'<span style="position:absolute;bottom:6px;font-size:10px;color:rgba(255,255,255,0.25);z-index:3">'+fm(b.amt)+'</span>'}
+        else{d.innerHTML=chestSVG(b.id+1,ci)+'<div class="num-tag">#'+(b.id+1)+'</div>'}
+        const ok=!gs.ov&&!b.open&&!b.picked;
+        if(ok){if(gs.ch<0)d.addEventListener('click',()=>pick(b.id));else d.addEventListener('click',()=>open(b.id))}
+        else if(!b.picked&&!b.open)d.classList.add('locked');g.appendChild(d)});
+}
+function pick(id){if(gs.ch>=0)return;const el=document.querySelectorAll('.case')[id];if(el)el.classList.add('fly');
+    setTimeout(()=>{gs.ch=id;gs.bx[id].picked=true;gs.rd=1;gs.to=RB[0];gs.op=0;document.getElementById('pedestal').style.display='flex';
+        document.getElementById('chosenCase').innerHTML=chestSVG(id+1,id%chestColors.length).replace('class="chest-body"','').replace('class="gold-sparkle"','');ui();grid();add(10)},450)}
+function reveal(id,amt,cb){
+    document.getElementById('revealImg').innerHTML=chestSVG(id+1,id%chestColors.length);
+    document.getElementById('revealVal').textContent=fm(amt);document.getElementById('boxReveal').style.display='flex';
+    chime();confetti(HI.has(amt)?25:6);add(HI.has(amt)?50:5);window._rcb=cb}
+function revealClose(){document.getElementById('boxReveal').style.display='none';if(window._rcb){const cb=window._rcb;window._rcb=null;cb()}}
+document.getElementById('boxReveal').addEventListener('click',revealClose);
+function open(id){if(gs.ov||id===gs.ch||gs.bx[id].open||gs.op>=gs.to)return;
+    gs.bx[id].open=true;gs.op++;const rem=gs.bx.filter(b=>!b.open&&b.id!==gs.ch).length;beep();grid();board();
+    reveal(id,gs.bx[id].amt,()=>{if(gs.op>=gs.to&&rem>0)setTimeout(offer,300);else if(!rem)setTimeout(end,300);else ui()})}
+function calc(){
+    const v=gs.bx.filter(b=>!b.open||b.id===gs.ch).map(b=>b.amt);const avg=v.reduce((a,b)=>a+b,0)/v.length;
+    const f=0.3+0.6*(1-(v.length-1)/25);const o=Math.max(0.1,avg*f*(0.85+Math.random()*0.3));
+    return o>=1000?Math.round(o/100)*100:o>=100?Math.round(o/10)*10:Math.round(o*10)/10;
+}
+function offer(){
+    const o=calc(),rem=gs.bx.filter(b=>!b.open&&b.id!==gs.ch).length;
+    document.getElementById('offerValue').textContent=fm(o);document.getElementById('offerHint').textContent='剩'+(rem+1)+'箱·还价'+(gs.bg?'已用':'×1');
+    document.getElementById('offerOverlay').style.display='flex';document.getElementById('offerBtns').style.display='flex';document.getElementById('haggleWrap').style.display='none';
+    document.getElementById('btnHaggle').style.display=gs.bg?'none':'';document.getElementById('btnYes').onclick=()=>deal(o);
+    document.getElementById('btnNo').onclick=()=>{document.getElementById('offerOverlay').style.display='none';nxt()};
+    document.getElementById('btnHaggle').onclick=()=>{document.getElementById('offerBtns').style.display='none';document.getElementById('haggleWrap').style.display='';document.getElementById('haggleInput').value=Math.round(o*1.3);document.getElementById('haggleInput').focus()};
+    document.getElementById('btnDoHaggle').onclick=()=>haggle(o);document.getElementById('btnCancelHaggle').onclick=()=>{document.getElementById('haggleWrap').style.display='none';document.getElementById('offerBtns').style.display='flex'};
+}
+function deal(v){document.getElementById('offerOverlay').style.display='none';gs.earn=v;gs.ov=true;gs.bx[gs.ch].open=true;grid();board();add(v>gs.bx[gs.ch].amt?100:20);setTimeout(end,600)}
+function haggle(o){
+    const ca=parseFloat(document.getElementById('haggleInput').value);if(isNaN(ca)||ca<=0){alert('无效金额');return}
+    gs.bg=true;document.getElementById('offerOverlay').style.display='none';const v=gs.bx.filter(b=>!b.open||b.id===gs.ch).map(b=>b.amt);
+    const avg=v.reduce((a,b)=>a+b,0)/v.length;let p=ca<=avg*0.7?0.85:ca<=avg?0.5:ca<=avg*1.5?0.2:0.05;
+    if(Math.random()<p){gs.earn=ca;gs.ov=true;gs.bx[gs.ch].open=true;add(50);grid();board();setTimeout(end,600)}else nxt();
+}
+function nxt(){const rem=gs.bx.filter(b=>!b.open&&b.id!==gs.ch).length;if(!rem){gs.ov=true;gs.bx[gs.ch].open=true;grid();board();setTimeout(end,300);return}
+    gs.rd++;gs.to=gs.rd<=RB.length?RB[gs.rd-1]:1;gs.to=Math.min(gs.to,rem);gs.op=0;ui()}
+function end(){const pa=gs.bx[gs.ch].amt,ea=gs.earn||pa;
+    document.getElementById('endAmount').textContent=fm(pa);
+    const cc=document.getElementById('chosenCase');
+    cc.innerHTML=chestSVG(gs.ch+1,gs.ch%chestColors.length).replace('class="chest-body"','').replace('class="gold-sparkle"','');
+    const m=document.getElementById('endMsg');if(gs.earn>0){const d=ea-pa;m.innerHTML=d>0?'<span style="color:#27ae60">净赚 '+fm(d)+'</span>':'<span style="color:#e74c3c">少了 '+fm(-d)+'</span>'}
+    else m.textContent='坚持到了最后';document.getElementById('endOverlay').style.display='flex';confetti(pa>=25000?60:15);
+    if(pa>=100000)add(200);else if(pa>=50000)add(100);if(pa>=25000)chime()}
+function restartGame(){reset()}
+
+// ====== 商店 ======
+document.getElementById('btnShop').addEventListener('click',()=>{rs();document.getElementById('shopOverlay').style.display='flex'});
+document.getElementById('shopCloseBtn').addEventListener('click',()=>document.getElementById('shopOverlay').style.display='none');
+document.getElementById('shopOverlay').addEventListener('click',function(e){if(e.target===this)this.style.display='none'});
+
+// ====== 启动 ======
+document.getElementById('coinDisplay').textContent=coins;reset();
+</script>
+</body>
+</html>

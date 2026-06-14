@@ -251,7 +251,7 @@ function sfxCartoonLose(){try{const c=ac(),t=c.currentTime;
     [400,320,240,180].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t+i*0.25);g.gain.setValueAtTime(0.15,t+i*0.25);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.25+0.4);o.connect(g);g.connect(c.destination);o.start(t+i*0.25);o.stop(t+i*0.25+0.4)})}catch(e){}}
 
 function playOpenSound(amt){
-    const src=amt<=500?'cheer.wav':amt>=100000?'ohno.wav':'normal.mp3';
+    const src=amt<=500?'cheer.mp3':amt>=100000?'ohno.mp3':'normal.mp3';
     const a=new Audio(src);a.currentTime=0;a.play().catch(()=>{});
     setTimeout(()=>{a.pause();a.remove()},3000);
 }
