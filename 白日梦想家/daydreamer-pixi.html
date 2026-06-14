@@ -14,7 +14,7 @@
 <script src="https://pixijs.download/v7.x/pixi.min.js"></script>
 <script>
 const W=1280,H=720;
-const app=new PIXI.Application({width:W,height:H,backgroundColor:0x0a0a14,antialias:true,resolution:Math.min(window.devicePixelRatio||1,2),autoDensity:false});
+const app=new PIXI.Application({width:W,height:H,backgroundColor:0x0a0a14,antialias:true,resolution:Math.min((window.devicePixelRatio||1),2),autoDensity:false});
 document.body.appendChild(app.view);
 function resizeGame(){
     const ww=window.innerWidth,wh=window.innerHeight;
@@ -23,6 +23,46 @@ function resizeGame(){
     app.view.style.position='absolute';app.view.style.left=((ww-W*scale)/2)+'px';app.view.style.top=((wh-H*scale)/2)+'px';
 }
 window.addEventListener('resize',resizeGame);resizeGame();
+
+// 横竖屏布局
+let isPortrait=window.innerHeight>window.innerWidth;
+window.addEventListener('resize',()=>{
+    const newP=window.innerHeight>window.innerWidth;
+    if(newP!==isPortrait){isPortrait=newP;relayout()}
+});
+
+// 布局参数（根据横竖屏动态计算）
+const L={}; // L.w,L.h,L.cw,L.ch,L.gap,L.cols,L.ox,L.oy,L.bx,L.by,L.bw
+function calcLayout(){
+    if(isPortrait){
+        // 竖屏: 宝箱5列居中，金额栏在底部
+        L.cw=65;L.ch=52;L.gap=8;L.cols=5;
+        L.ox=(W-L.cols*(L.cw+L.gap)+L.gap)/2;
+        L.oy=210;
+        L.bw=W-20;L.by=H-90;L.bx=10;
+    }else{
+        // 横屏: 宝箱6列左，金额栏右侧
+        L.cw=95;L.ch=76;L.gap=14;L.cols=6;
+        L.ox=50;
+        L.oy=140;
+        L.bw=400;L.by=115;L.bx=W-L.bw-20;
+    }
+}
+calcLayout();
+
+function relayout(){
+    calcLayout();
+    // 更新标题位置
+    title.x=W/2;title.y=isPortrait?20:30;
+    // 更新状态文字
+    statusTxt.x=W/2;statusTxt.y=isPortrait?140:120;
+    // 更新金币
+    coinTxt.x=isPortrait?W-60:W-100;coinTxt.y=isPortrait?20:30;
+    // 更新展示台
+    pedestal.x=W/2-160;pedestal.y=isPortrait?60:55;
+    // 重建宝箱和面板
+    if(st.boxes.length>0){createBoxes();createBoard()}
+}
 
 // 加载真图
 let texture=null,openTexture=null;
@@ -235,7 +275,7 @@ const boardItems=[]; // {txt,amount}
 
 function createBoard(){
     boardContainer.removeChildren();boardItems.length=0;
-    const bx=W-500,by=115,BW=480;
+    const bx=L.bx,by=L.by,BW=L.bw;
     // 背景
     const bg=new PIXI.Graphics();
     bg.beginFill(0x0a0814,0.8);bg.drawRoundedRect(0,0,BW,H-by-15,10);bg.endFill();
@@ -333,30 +373,29 @@ const popupLayer=new PIXI.Container();app.stage.addChild(popupLayer);
 // 创建宝箱
 function createBoxes(){
     boxLayer.removeChildren();items=[];
-    const CW=100,CH=76,GAP=18,COLS=6;
+    const CW=L.cw,CH=L.ch,GAP=L.gap,COLS=L.cols;
     for(let i=0;i<26;i++){
         const col=i%COLS,row=Math.floor(i/COLS);
         const cont=new PIXI.Container();
 
-        // 真图精灵
         let spr;
         if(texture){spr=new PIXI.Sprite(texture);spr.width=CW;spr.height=CH}
         else{spr=new PIXI.Graphics();spr.beginFill(0x888899);spr.drawRoundedRect(0,0,CW,CH,6);spr.endFill()}
         cont.addChild(spr);
 
-        // 圆圈编号（箱子下方）
+        const cr=isPortrait?9:12;
         const circle=new PIXI.Graphics();
-        circle.beginFill(0xc8a848,0.9);circle.drawCircle(0,0,12);circle.endFill();
-        circle.lineStyle(2,0xffd700,0.8);circle.drawCircle(0,0,12);
-        circle.x=CW/2;circle.y=CH+18;
+        circle.beginFill(0xc8a848,0.9);circle.drawCircle(0,0,cr);circle.endFill();
+        circle.lineStyle(2,0xffd700,0.8);circle.drawCircle(0,0,cr);
+        circle.x=CW/2;circle.y=CH+14;
         cont.addChild(circle);
 
-        const num=new PIXI.Text(String(i+1),{fontSize:14,fontWeight:'bold',fill:0x1a1a2e,fontFamily:'Arial'});
-        num.anchor.set(0.5);num.x=CW/2;num.y=CH+18;
+        const num=new PIXI.Text(String(i+1),{fontSize:isPortrait?11:14,fontWeight:'bold',fill:0x1a1a2e,fontFamily:'Arial'});
+        num.anchor.set(0.5);num.x=CW/2;num.y=CH+14;
         cont.addChild(num);
 
-        cont.x=50+col*(CW+GAP);
-        cont.y=140+row*(CH+GAP+22);
+        cont.x=L.ox+col*(CW+GAP);
+        cont.y=L.oy+row*(CH+GAP+18);
         cont.interactive=true;cont.cursor='pointer';
         cont.hitArea=new PIXI.Rectangle(-CW/2,(-CH-20)/2,CW,CH+30);
         const id=i;
@@ -385,10 +424,9 @@ function pick(i){
 }
 
 function shuffleBoxes(){
-    const COLS=6,CW=100,GAP=18,H=76;
-    // 所有网格位置
+    const COLS=L.cols,CW=L.cw,GAP=L.gap,H=L.ch;
     const allSlots=[];
-    for(let r=0;r<5;r++)for(let c=0;c<COLS;c++)allSlots.push({x:50+c*(CW+GAP),y:140+r*(H+GAP+22)});
+    for(let r=0;r<5;r++)for(let c=0;c<COLS;c++)allSlots.push({x:L.ox+c*(CW+GAP),y:L.oy+r*(H+GAP+18)});
     // 统计剩余箱子数量
     const remaining=items.filter(it=>!it.opened&&it.id!==st.ch&&it.cont.visible);
     // 随机打乱剩余箱子
