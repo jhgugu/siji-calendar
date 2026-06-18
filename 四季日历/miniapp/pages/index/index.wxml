@@ -1,0 +1,222 @@
+<!-- 四季日历 · 黄历卜卦 -->
+
+<view class="page">
+
+  <!-- 四季横幅 -->
+  <view class="season-banner" style="background:{{bannerBg}};">
+    <text class="season-icon">{{climateIcon}}</text>
+    <view class="season-name">{{seasonName}}</view>
+    <view class="climate-desc">{{climateDesc}}</view>
+    <view class="month-subtitle">{{climateSubtitle}}</view>
+  </view>
+
+  <!-- 头部导航 -->
+  <view class="header">
+    <view class="nav-btn" bindtap="prevMonth">◀</view>
+    <view class="title">{{monthYearTitle}} <text wx:if="{{weatherSummary && showWeather}}" class="weather-summary">{{weatherSummary}}</text></view>
+    <view class="nav-btn" bindtap="nextMonth">▶</view>
+  </view>
+
+  <!-- 定位 -->
+  <view class="location-row" bindtap="openCityPicker">
+    <text class="location-text">📍 {{locationName}}</text>
+  </view>
+
+  <!-- 按钮 -->
+  <view class="btn-row">
+    <button class="btn-today" bindtap="goToToday">📍 回到今天</button>
+    <button class="btn-fortune" bindtap="openDivination">🔮 今日运势</button>
+  </view>
+
+  <!-- 星期 -->
+  <view class="weekdays">
+    <view class="weekday-item weekend">日</view>
+    <view class="weekday-item">一</view>
+    <view class="weekday-item">二</view>
+    <view class="weekday-item">三</view>
+    <view class="weekday-item">四</view>
+    <view class="weekday-item">五</view>
+    <view class="weekday-item weekend">六</view>
+  </view>
+
+  <!-- 日期网格 -->
+  <view class="calendar-grid">
+    <view wx:for="{{days}}" wx:key="dateStr"
+      class="day-cell {{item.isOther ? 'other-month' : ''}} {{item.isToday ? 'today' : ''}} {{item.isSel ? 'selected' : ''}}"
+      style="{{item.isToday ? 'background:' + todayBg + ';color:#fff;' : ''}}"
+      bindtap="onDayClick" data-date="{{item.dateStr}}">
+      <text class="day-num">{{item.day}}</text>
+      <text class="lunar-date {{item.lunarFirst ? 'lunar-first' : ''}} {{item.lunarLeap ? 'lunar-leap' : ''}}">{{item.lunar}}</text>
+      <text wx:if="{{item.weather}}" class="weather-icon">{{item.weather}}</text>
+      <view wx:if="{{item.hasEvent}}" class="event-dot"></view>
+      <text wx:if="{{item.holiday}}" class="holiday-label">{{item.holiday}}</text>
+    </view>
+  </view>
+
+  <!-- 事件面板 -->
+  <view wx:if="{{selectedDate}}" class="event-panel">
+    <view class="event-title">📝 {{selectedDateLabel}} 的待办事项</view>
+    <view class="event-input-row">
+      <input class="event-input" value="{{eventInput}}" bindinput="onEventInput" placeholder="输入待办事项..." maxlength="50" confirm-type="done" bindconfirm="addEvent"/>
+      <button class="btn-add" bindtap="addEvent">＋ 添加</button>
+    </view>
+    <view wx:for="{{eventList}}" wx:key="id" class="event-item">
+      <text>{{item.text}}</text>
+      <text class="event-del" bindtap="deleteEvent" data-id="{{item.id}}">✕</text>
+    </view>
+  </view>
+
+</view>
+
+<!-- ========== 黄历弹窗 ========== -->
+<view class="overlay" wx:if="{{showHuangli}}" bindtap="closeHuangli">
+  <view class="huangli-popup hl-theme-{{hlData.theme}}" catchtap="nop">
+    <!-- 粒子装饰 -->
+    <view class="hl-particles" wx:if="{{hlData.theme !== 'default'}}">
+      <!-- 烟花：春节/除夕/国庆/元旦/劳动/建党 -->
+      <block wx:if="{{hlData.theme === 'spring' || hlData.theme === 'guoqing' || hlData.theme === 'newyear' || hlData.theme === 'labour' || hlData.theme === 'party'}}">
+        <view wx:for="{{hlParticles}}" wx:key="i" class="hl-firework" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.d}}s;--dx:{{item.dx}}px;--dy:{{item.dy}}px;"></view>
+      </block>
+      <!-- 星星：七夕/中秋/儿童/建军 -->
+      <block wx:if="{{hlData.theme === 'qixi' || hlData.theme === 'midautumn' || hlData.theme === 'children' || hlData.theme === 'army'}}">
+        <view wx:for="{{hlParticles}}" wx:key="i" class="hl-star" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.d}}s;font-size:{{item.s}}px;">✦</view>
+      </block>
+      <!-- 灯笼：元宵 -->
+      <block wx:if="{{hlData.theme === 'yuanxiao'}}">
+        <view wx:for="{{hlParticles}}" wx:key="i" class="hl-lantern" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.d}}s;">🏮</view>
+      </block>
+      <!-- 波浪：端午 -->
+      <block wx:if="{{hlData.theme === 'dragonboat'}}">
+        <view wx:for="{{hlParticles}}" wx:key="i" class="hl-wave" style="bottom:{{item.y}}%;animation-delay:{{item.d}}s;"></view>
+      </block>
+      <!-- 落叶：重阳/清明/教师 -->
+      <block wx:if="{{hlData.theme === 'chongyang' || hlData.theme === 'qingming' || hlData.theme === 'teacher'}}">
+        <view wx:for="{{hlParticles}}" wx:key="i" class="hl-leaf" style="left:{{item.x}}%;animation-delay:{{item.d}}s;">🍂</view>
+      </block>
+      <!-- 爱心：情人节/妇女节 -->
+      <block wx:if="{{hlData.theme === 'valentine' || hlData.theme === 'women'}}">
+        <view wx:for="{{hlParticles}}" wx:key="i" class="hl-heart" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.d}}s;font-size:{{item.s}}px;">❤️</view>
+      </block>
+    </view>
+    <!-- 月亮（中秋） -->
+    <view class="hl-moon" wx:if="{{hlData.theme === 'midautumn'}}"></view>
+    <!-- 内容 -->
+    <view class="hl-header">
+      <view class="hl-solar">{{hlData.solar}}</view>
+      <view class="hl-lunar">{{hlData.lunar}}</view>
+      <view class="hl-ganzhi">{{hlData.ganzhi}}</view>
+    </view>
+    <view class="hl-body">
+      <view class="hl-row"><text class="hl-label">宜</text><text class="hl-yi">{{hlData.yi}}</text></view>
+      <view class="hl-row"><text class="hl-label">忌</text><text class="hl-ji">{{hlData.ji}}</text></view>
+      <view class="hl-divider"></view>
+      <view class="hl-row"><text class="hl-label">冲</text><text>{{hlData.chong}}</text></view>
+      <view class="hl-row"><text class="hl-label">吉神</text><text>{{hlData.jishen}}</text></view>
+      <view class="hl-row"><text class="hl-label">凶神</text><text>{{hlData.xshen}}</text></view>
+    </view>
+    <view class="hl-footer">
+      <button class="btn-close" bindtap="closeHuangli">关 闭</button>
+    </view>
+  </view>
+</view>
+
+<!-- ========== 卜卦弹窗 ========== -->
+<view class="overlay" wx:if="{{showDivination}}" bindtap="closeDivination">
+  <view class="div-panel" catchtap="nop">
+    <view class="div-title">🔮 六爻卜卦</view>
+
+    <!-- 心有所想 -->
+    <view wx:if="{{divStep === 'wish'}}" class="wish-area">
+      <view class="wish-label">心有所想</view>
+      <input class="wish-input" value="{{wishText}}" bindinput="onWishInput" placeholder="输入所求之事" maxlength="50"/>
+      <button class="btn-primary div-full-btn" bindtap="startShaking">🙏 开始摇卦</button>
+      <button class="btn-secondary div-full-btn" bindtap="closeDivination">关 闭</button>
+      <view class="div-disclaimer">⚠ 此项目仅供娱乐</view>
+    </view>
+
+    <!-- 摇卦 -->
+    <view wx:if="{{divStep === 'shake'}}">
+      <view class="div-subtitle">{{wishText ? '「' + wishText + '」— 点击卦桶摇卦' : '心中默念所求之事，点击卦桶摇卦'}}</view>
+
+      <view class="bucket-area {{bucketBusy ? 'busy' : ''}} {{bucketShaking ? 'shaking' : ''}}" bindtap="shakeBucket">
+        <!-- 木签 -->
+        <view class="bucket-sticks" wx:if="{{clickRemaining > 0}}">
+          <view wx:for="{{[1,2,3,4,5,6,7,8,9,10,11,12]}}" wx:key="*this" class="stick" style="animation-delay:{{0.05 * (index % 5)}}s;left:{{15 + (index * 7) % 36}}px;transform:rotate({{(index-6)*3}}deg);"></view>
+        </view>
+        <!-- 卦桶 -->
+        <view class="bucket {{bucketShaking ? 'shaking' : ''}}">
+          <view class="bucket-label">爻</view>
+        </view>
+        <!-- 飞出木签 -->
+        <view wx:if="{{flyingStick}}" class="flying-stick" style="left:{{flyingStick.x}}%;top:{{flyingStick.y}}%;"></view>
+      </view>
+
+      <view class="click-hint" wx:if="{{clickRemaining > 0}}">
+        还需摇卦 <text class="click-count">{{clickRemaining}}</text> 次
+      </view>
+
+      <view class="yao-lines">
+        <block wx:for="{{yaoLines}}" wx:key="index">
+          <view class="yao-line {{item.pending ? 'pending' : ''}}">
+            <view wx:if="{{!item.pending && item.type === 'yang'}}" class="yang-line"></view>
+            <view wx:if="{{!item.pending && item.type === 'yin'}}" style="display:flex;gap:20px;">
+              <view class="yin-seg"></view><view class="yin-seg"></view>
+            </view>
+            <text wx:if="{{item.changing}}" class="change-mark">○</text>
+          </view>
+        </block>
+      </view>
+
+      <!-- 结果 -->
+      <view wx:if="{{hexResult}}" class="hex-result">
+        <view class="hex-name">第{{hexResult.num}}卦 {{hexResult.name}}</view>
+        <view class="hex-judgment">彖曰：{{hexResult.judgment}}</view>
+        <view wx:if="{{hexResult.changingInfo}}" class="hex-changing">{{hexResult.changingInfo}}</view>
+        <view class="hex-detail">{{hexResult.interp}}</view>
+        <view wx:if="{{hexResult.changedInterp}}" class="hex-detail">{{hexResult.changedInterp}}</view>
+
+        <!-- AI 详解 -->
+        <view wx:if="{{showExplain}}" class="explain-area">
+          <view class="explain-title">📖 AI 详解</view>
+          <button class="explain-auto-btn" bindtap="onClaudeLink">⚡ Claude 一键直达（无需粘贴，中国大陆不可用）</button>
+          <view class="explain-auto-hint">点击即自动填入，免费免粘贴</view>
+          <view class="explain-divider"><text>其他 AI 服务</text></view>
+          <textarea class="explain-text" value="{{explainPrompt}}" readonly></textarea>
+          <button class="btn-copy" bindtap="copyExplainText">📋 一键复制文案</button>
+          <view class="explain-hint">{{explainHint}}</view>
+          <view class="explain-links">
+            <button class="link-btn deepseek" bindtap="openService" data-url="https://chat.deepseek.com/">DeepSeek</button>
+            <button class="link-btn kimi" bindtap="openService" data-url="https://kimi.moonshot.cn/">Kimi</button>
+            <button class="link-btn tongyi" bindtap="openService" data-url="https://tongyi.aliyun.com/qianwen/">通义千问</button>
+            <button class="link-btn doubao" bindtap="openService" data-url="https://www.doubao.com/">豆包</button>
+          </view>
+        </view>
+      </view>
+
+      <view class="div-btn-row">
+        <button class="btn-secondary" bindtap="closeDivination">关 闭</button>
+        <button wx:if="{{hexResult && !showExplain}}" class="btn-primary" bindtap="toggleExplain">📖 AI 详解</button>
+        <button wx:if="{{hexResult}}" class="btn-primary" bindtap="retryDivination">🔄 重新卜卦</button>
+      </view>
+      <view class="div-disclaimer">⚠ 此项目仅供娱乐</view>
+    </view>
+  </view>
+</view>
+
+<!-- ========== 城市选择弹窗 ========== -->
+<view class="overlay" wx:if="{{showCityPicker}}" bindtap="closeCityPicker">
+  <view class="city-panel" catchtap="nop">
+    <view class="div-title">🌍 选择城市</view>
+    <view class="city-search-row">
+      <input class="city-search-input" value="{{citySearch}}" bindinput="onCitySearchInput" placeholder="输入城市名…" confirm-type="search" bindconfirm="doCitySearch"/>
+      <button class="btn-primary" bindtap="doCitySearch">搜索</button>
+    </view>
+    <scroll-view scroll-y class="city-results" wx:if="{{cityResults.length}}">
+      <view wx:for="{{cityResults}}" wx:key="id" class="city-item" bindtap="selectCity" data-idx="{{index}}">
+        <text>{{item.name}} · {{item.region}} {{item.country}}</text>
+      </view>
+    </scroll-view>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" bindtap="useGPS">📡 使用 GPS/北斗 定位</button>
+    <button class="btn-secondary" style="width:100%;margin-top:6px;" bindtap="closeCityPicker">关 闭</button>
+  </view>
+</view>

@@ -1,0 +1,27 @@
+/* 全局样式 */
+page {
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f5f0e8;
+  min-height: 100vh;
+}
+
+/* 通用按钮 */
+.btn-primary {
+  background: #8b5e3c;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.btn-secondary {
+  background: #e8dcc8;
+  color: #5a3e2b;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}

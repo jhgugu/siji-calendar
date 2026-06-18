@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "四季日历 · 黄历卜卦",
+    "navigationBarBackgroundColor": "#8b5e3c",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f0e8"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于获取您所在位置的气候和天气信息"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "sitemapLocation": "sitemap.json"
+}

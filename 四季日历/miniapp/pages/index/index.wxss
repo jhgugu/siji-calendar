@@ -1,0 +1,325 @@
+/* ========== 页面 ========== */
+.page { padding: 20px 16px; min-height: 100vh; }
+
+/* ========== 横幅 ========== */
+.season-banner { text-align: center; padding: 12px 20px; border-radius: 14px; margin-bottom: 14px; color: #fff; }
+.season-icon { font-size: 48px; display: block; margin-bottom: 4px; }
+.season-name { font-size: 20px; font-weight: 700; letter-spacing: 2px; }
+.climate-desc { font-size: 13px; margin-top: 4px; opacity: 0.9; }
+.month-subtitle { font-size: 12px; margin-top: 2px; opacity: 0.75; }
+
+/* ========== 导航 ========== */
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.title { font-size: 20px; font-weight: 700; color: #333; }
+.weather-summary { font-size: 12px; font-weight: 400; color: #888; margin-left: 8px; }
+.nav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.7); border-radius: 10px; font-size: 18px; color: #5b6abf; }
+
+/* ========== 按钮 ========== */
+.btn-row { margin-bottom: 12px; display: flex; gap: 0; justify-content: center; }
+.btn-today { flex:1; max-width:140px; color:#fff; border:none; margin:0; padding:10px 0; border-radius:8px 0 0 8px; font-size:14px; background:#5b6abf; }
+.btn-fortune { flex:1; max-width:140px; color:#fff; border:none; margin:0; padding:10px 0; border-radius:0 8px 8px 0; font-size:14px; background:#8b5e3c; }
+
+/* ========== 星期 & 日历 ========== */
+.weekdays { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin-bottom: 4px; }
+.weekday-item { text-align: center; font-weight: 600; font-size: 14px; color: #888; padding: 4px 0; }
+.weekend { color: #e07b7b; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+.day-cell { min-height: 0; }
+.day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; font-size: 15px; color: #333; min-height: 54px; background: rgba(255,255,255,0.4); }
+.day-cell.other-month { color: #ccc; background: transparent; }
+.day-cell.today { font-weight: bold; }
+.day-cell.selected { border: 2px solid #5b6abf; }
+.day-num { font-size: 15px; }
+.lunar-date { font-size: 10px; color: #999; }
+.lunar-date.lunar-first { color: #e07b7b; font-weight: 600; }
+.lunar-date.lunar-leap { color: #e67e22; }
+.day-cell.today .lunar-date { color: rgba(255,255,255,0.9); }
+.day-cell.today .holiday-label { color: #ffeaa7; }
+.day-cell.today .event-dot { background: #fff; }
+.weather-icon { font-size: 11px; line-height: 1; margin-top: 1px; }
+.day-cell.today .weather-icon { opacity: 0.9; }
+.event-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff6b6b; margin-top: 2px; }
+.holiday-label { font-size: 9px; color: #e07b7b; white-space: nowrap; margin-top: 1px; }
+
+/* ========== 事件面板 ========== */
+.event-panel { margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,0.1); }
+.event-title { font-size: 16px; color: #555; margin-bottom: 10px; }
+.event-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.event-input { flex:1; padding:10px 14px; border:2px solid #e0e0e0; border-radius:10px; font-size:14px; }
+.btn-add { color:#fff; border:none; padding:10px 18px; border-radius:10px; font-size:14px; background:#5b6abf; }
+.event-item { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:5px; background:rgba(255,255,255,0.6); border-radius:8px; font-size:14px; }
+.event-del { color:#bbb; font-size:16px; padding:2px 6px; }
+
+/* ========== 弹窗通用 ========== */
+.overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:200; display:flex; align-items:center; justify-content:center; }
+
+/* ========== 黄历 ========== */
+.huangli-popup { background:#fffef9; border-radius:16px; max-width:420px; width:90%; overflow:hidden; }
+.hl-header { padding:20px 24px 14px; text-align:center; }
+.hl-solar { font-size:22px; font-weight:700; color:#333; }
+.hl-lunar { font-size:18px; color:#c0392b; margin-top:4px; font-weight:600; }
+.hl-ganzhi { font-size:13px; color:#888; margin-top:2px; }
+.hl-body { padding:10px 24px 16px; }
+.hl-row { display:flex; align-items:flex-start; margin-bottom:8px; font-size:14px; }
+.hl-label { color:#999; min-width:28px; font-weight:600; }
+.hl-yi { color:#27ae60; }
+.hl-ji { color:#c0392b; }
+.hl-divider { border-top:1px dashed #e0d8c8; margin:8px 0; }
+.hl-footer { padding:0 24px 18px; text-align:center; }
+.btn-close { background:#8b7355; color:#fff; border:none; padding:8px 30px; border-radius:20px; font-size:14px; }
+
+/* ========== 黄历节日主题 ========== */
+.huangli-popup { position:relative; overflow:hidden; }
+.huangli-popup .hl-header,
+.huangli-popup .hl-body,
+.huangli-popup .hl-footer { position:relative; z-index:1; }
+
+/* 默认 */
+.hl-theme-default { background:#fffef9; }
+
+/* 春节/国庆 — 红色喜庆 */
+.hl-theme-spring, .hl-theme-guoqing {
+  background:linear-gradient(180deg, #c0392b 0%, #e74c3c 40%, #f9d423 100%);
+}
+.hl-theme-spring .hl-solar, .hl-theme-guoqing .hl-solar,
+.hl-theme-spring .hl-lunar, .hl-theme-guoqing .hl-lunar,
+.hl-theme-spring .hl-ganzhi, .hl-theme-guoqing .hl-ganzhi { color:#fff; }
+.hl-theme-spring .hl-body, .hl-theme-guoqing .hl-body { color:rgba(255,255,255,0.9); }
+
+/* 元宵 — 暖橙 */
+.hl-theme-yuanxiao {
+  background:linear-gradient(180deg, #d35400 0%, #f39c12 40%, #fdebd0 100%);
+}
+.hl-theme-yuanxiao .hl-solar, .hl-theme-yuanxiao .hl-lunar { color:#fff; }
+
+/* 七夕 — 星空紫蓝 */
+.hl-theme-qixi {
+  background:linear-gradient(180deg, #1a1a4e 0%, #2c3e8e 50%, #6b7fd4 100%);
+}
+.hl-theme-qixi .hl-solar, .hl-theme-qixi .hl-lunar,
+.hl-theme-qixi .hl-ganzhi, .hl-theme-qixi .hl-body { color:#fff; }
+
+/* 中秋 — 夜空 */
+.hl-theme-midautumn {
+  background:linear-gradient(180deg, #0d1b3e 0%, #1a3a6e 50%, #4a7ab5 100%);
+}
+.hl-theme-midautumn .hl-solar, .hl-theme-midautumn .hl-lunar,
+.hl-theme-midautumn .hl-ganzhi, .hl-theme-midautumn .hl-body { color:#fff; }
+
+/* 端午 — 绿水碧波 */
+.hl-theme-dragonboat {
+  background:linear-gradient(180deg, #1a6b4a 0%, #27ae60 40%, #a8e6cf 100%);
+}
+.hl-theme-dragonboat .hl-solar, .hl-theme-dragonboat .hl-lunar { color:#fff; }
+
+/* 重阳 — 金秋 */
+.hl-theme-chongyang {
+  background:linear-gradient(180deg, #8b4513 0%, #d4a017 40%, #f5e6c8 100%);
+}
+.hl-theme-chongyang .hl-solar, .hl-theme-chongyang .hl-lunar { color:#fff; }
+
+/* 清明 — 青绿 */
+.hl-theme-qingming {
+  background:linear-gradient(180deg, #2d5a27 0%, #5a8f4a 50%, #d4e8c5 100%);
+}
+.hl-theme-qingming .hl-solar, .hl-theme-qingming .hl-lunar { color:#fff; }
+
+/* 圣诞 */
+.hl-theme-christmas {
+  background:linear-gradient(180deg, #1a3a4a 0%, #2c5f7c 50%, #c8dce8 100%);
+}
+.hl-theme-christmas .hl-solar, .hl-theme-christmas .hl-lunar { color:#fff; }
+
+/* 元旦 — 金色 */
+.hl-theme-newyear {
+  background:linear-gradient(180deg, #c8960a 0%, #f0c040 40%, #fef9e7 100%);
+}
+.hl-theme-newyear .hl-solar, .hl-theme-newyear .hl-lunar { color:#fff; }
+
+/* 情人节/妇女节 — 粉色 */
+.hl-theme-valentine, .hl-theme-women {
+  background:linear-gradient(180deg, #e8557a 0%, #f590aa 50%, #fde8ee 100%);
+}
+.hl-theme-valentine .hl-solar, .hl-theme-women .hl-solar,
+.hl-theme-valentine .hl-lunar, .hl-theme-women .hl-lunar { color:#fff; }
+
+/* 劳动节 — 暖黄 */
+.hl-theme-labour {
+  background:linear-gradient(180deg, #e67e22 0%, #f39c12 40%, #fef5e7 100%);
+}
+.hl-theme-labour .hl-solar, .hl-theme-labour .hl-lunar { color:#fff; }
+
+/* 儿童节 — 彩虹 */
+.hl-theme-children {
+  background:linear-gradient(180deg, #8e44ad 0%, #3498db 50%, #2ecc71 100%);
+}
+.hl-theme-children .hl-solar, .hl-theme-children .hl-lunar { color:#fff; }
+
+/* 建党节 — 红金 */
+.hl-theme-party {
+  background:linear-gradient(180deg, #c0392b 0%, #e74c3c 50%, #f39c12 100%);
+}
+.hl-theme-party .hl-solar, .hl-theme-party .hl-lunar { color:#fff; }
+
+/* 建军节 — 军绿 */
+.hl-theme-army {
+  background:linear-gradient(180deg, #2d5016 0%, #4a7c23 50%, #c5d5a0 100%);
+}
+.hl-theme-army .hl-solar, .hl-theme-army .hl-lunar { color:#fff; }
+
+/* 教师节 — 书卷 */
+.hl-theme-teacher {
+  background:linear-gradient(180deg, #8b6914 0%, #c4a44a 50%, #f5ecd7 100%);
+}
+.hl-theme-teacher .hl-solar, .hl-theme-teacher .hl-lunar { color:#fff; }
+
+/* ========== 粒子动画 ========== */
+.hl-particles { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+.hl-firework {
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background:#ffd700; animation:fireworkBurst 1.5s ease-out infinite;
+}
+@keyframes fireworkBurst {
+  0%{transform:translate(0,0) scale(1);opacity:1;}
+  100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0;}
+}
+.hl-star { position:absolute; color:#fff; animation:starBlink 2s ease-in-out infinite; }
+@keyframes starBlink {
+  0%,100%{opacity:0.3;transform:scale(0.8);}
+  50%{opacity:1;transform:scale(1.3);}
+}
+.hl-lantern { position:absolute; font-size:20px; animation:lanternFloat 3s ease-in-out infinite; }
+@keyframes lanternFloat {
+  0%,100%{transform:translateY(0) rotate(-5deg);}
+  50%{transform:translateY(-15px) rotate(5deg);}
+}
+.hl-wave { position:absolute; left:0; width:200%; height:30px; background:rgba(255,255,255,0.15); border-radius:40%; animation:waveMove 3s linear infinite; }
+@keyframes waveMove {
+  0%{transform:translateX(-50%);}
+  100%{transform:translateX(0%);}
+}
+.hl-leaf { position:absolute; font-size:16px; animation:leafDrop 3s ease-in-out infinite; }
+@keyframes leafDrop {
+  0%{transform:translateY(-10px) rotate(0deg);opacity:0.8;}
+  100%{transform:translateY(60px) rotate(360deg);opacity:0;}
+}
+.hl-heart { position:absolute; animation:heartFloat 2.5s ease-in-out infinite; }
+@keyframes heartFloat {
+  0%{transform:translateY(0) scale(0.8);opacity:0.9;}
+  100%{transform:translateY(-50px) scale(0.2);opacity:0;}
+}
+.hl-moon { position:absolute; top:15px; right:20px; width:50px; height:50px; border-radius:50%; background:radial-gradient(circle,#fffde7,#ffd54f); box-shadow:0 0 20px rgba(255,215,0,0.5),0 0 40px rgba(255,215,0,0.2); animation:moonGlow 3s ease-in-out infinite; z-index:0; }
+@keyframes moonGlow {
+  0%,100%{box-shadow:0 0 20px rgba(255,215,0,0.5),0 0 40px rgba(255,215,0,0.2);}
+  50%{box-shadow:0 0 30px rgba(255,215,0,0.7),0 0 60px rgba(255,215,0,0.4);}
+}
+
+/* ========== 卜卦 ========== */
+.div-panel { background:linear-gradient(180deg,#fdf8f0,#f8f0e0,#f0e8d0); border-radius:16px; padding:20px 20px 16px; max-width:440px; width:92%; max-height:85vh; overflow-y:auto; text-align:center; border:2px solid #d4c5a0; }
+.div-title { font-size:20px; color:#5a3e2b; margin-bottom:6px; letter-spacing:2px; }
+.div-subtitle { font-size:12px; color:#9a8b7a; margin-bottom:16px; }
+
+.wish-area { padding: 10px 0; }
+.wish-label { font-size:22px; color:#5a3e2b; font-weight:700; letter-spacing:3px; margin-bottom:16px; }
+.wish-input { width:100%; padding:14px 18px; border:2px solid #d4c5a0; border-radius:12px; font-size:18px; text-align:center; background:#fffdf7; box-sizing:border-box; height:56px; }
+.div-full-btn { width:100%; margin-top:12px; padding:12px 0; font-size:16px; letter-spacing:2px; }
+
+.bucket-area { width:90px; height:130px; margin:8px auto 14px; position:relative; }
+.bucket-area.busy { pointer-events:none; }
+
+/* 木签 */
+.bucket-sticks { position:absolute; top:4px; left:50%; transform:translateX(-50%); width:50px; height:70px; z-index:1; }
+.stick { position:absolute; width:6px; height:36px; border-radius:2px 2px 3px 3px; background:linear-gradient(180deg,#c0392b 0%,#c0392b 28%,#d4b896 28%,#f0dcc8 35%,#e8d0b0 60%,#d4b896 100%); }
+.bucket-area.shaking .stick { animation:stickJitter 0.1s ease-in-out infinite; }
+@keyframes stickJitter { 0%,100%{transform:translate(0,0);} 25%{transform:translate(1px,-1px);} 50%{transform:translate(-1px,0);} 75%{transform:translate(1px,1px);} }
+
+/* 卦桶 — 立体木筒 */
+.bucket { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:66px; height:98px; border-radius:4px 4px 10px 10px; border:1.5px solid #3a2208; background:linear-gradient(90deg,#3a2208,#5a3815 4%,#8b6930 12%,#c4a050 24%,#b89448 32%,#9b7a3c 42%,#7a5a28 56%,#5a3815 72%,#3a2208 84%,#4a3010 92%,#2a1808); box-shadow:inset 0 3px 6px rgba(0,0,0,0.5),inset -3px 0 6px rgba(0,0,0,0.15),inset 3px 0 6px rgba(0,0,0,0.1),0 6px 20px rgba(0,0,0,0.4); z-index:2; display:flex; align-items:center; justify-content:center; }
+/* 上铁箍 */
+.bucket::before { content:''; position:absolute; top:18%; left:-4px; right:-4px; height:6px; background:linear-gradient(180deg,#3a2810,#7a5a28 25%,#c4a050 55%,#7a5a28 75%,#3a2810); border-radius:2px; box-shadow:0 1px 0 rgba(255,200,100,0.3),0 2px 3px rgba(0,0,0,0.5); z-index:5; }
+/* 下铁箍 */
+.bucket::after { content:''; position:absolute; bottom:22%; left:-4px; right:-4px; height:6px; background:linear-gradient(180deg,#3a2810,#7a5a28 25%,#c4a050 55%,#7a5a28 75%,#3a2810); border-radius:2px; box-shadow:0 1px 0 rgba(255,200,100,0.3),0 2px 3px rgba(0,0,0,0.5); z-index:5; }
+.bucket-label { font-size:24px; color:#3a2208; font-weight:bold; position:relative; z-index:6; text-shadow:0 1px 0 rgba(180,140,80,0.3),0 -1px 0 rgba(0,0,0,0.3); }
+
+/* 桶摇动动画 */
+.bucket.shaking { animation:bucketShake 0.8s ease-in-out; }
+@keyframes bucketShake {
+  0%,100%{transform:translateX(-50%) rotate(0deg);}
+  5%{transform:translateX(-48%) rotate(3deg);}
+  10%{transform:translateX(-52%) rotate(-3deg);}
+  15%{transform:translateX(-47%) rotate(4deg);}
+  20%{transform:translateX(-53%) rotate(-4deg);}
+  25%{transform:translateX(-49%) rotate(5deg);}
+  30%{transform:translateX(-51%) rotate(-5deg);}
+  35%{transform:translateX(-48%) rotate(6deg);}
+  40%{transform:translateX(-52%) rotate(-6deg);}
+  45%{transform:translateX(-50%) rotate(4deg);}
+  50%{transform:translateX(-48%) rotate(-3deg);}
+  60%{transform:translateX(-51%) rotate(1.5deg);}
+  70%{transform:translateX(-50%) rotate(-0.5deg);}
+  85%{transform:translateX(-50%) rotate(0.1deg);}
+}
+
+/* 飞出木签 */
+.flying-stick { position:absolute; z-index:10; pointer-events:none; width:7px; height:36px; background:linear-gradient(180deg,#c0392b 0%,#c0392b 28%,#d4b896 28%,#f0dcc8 35%,#e8d0b0 60%,#d4b896 100%); border-radius:2px 2px 3px 3px; border:0.5px solid #b89870; animation:flyOut 0.8s ease-out forwards; }
+@keyframes flyOut {
+  0%{transform:translateY(0) scale(0.6) rotate(0deg);opacity:0;}
+  15%{transform:translateY(-30px) scale(1.2) rotate(180deg);opacity:1;}
+  50%{transform:translateY(-60px) scale(1) rotate(540deg);opacity:0.8;}
+  100%{transform:translateY(-90px) scale(0.5) rotate(900deg);opacity:0;}
+}
+
+.click-hint { font-size:14px; color:#7a5a3a; margin:8px 0 12px; }
+.click-count { font-size:22px; color:#c0392b; }
+
+.yao-lines { margin:0 auto 14px; width:180px; }
+.yao-line { display:flex; align-items:center; justify-content:center; height:30px; margin:4px 0; }
+.yao-line.pending { border:2px dashed #c8b898; border-radius:6px; }
+.yang-line { width:120px; height:8px; background:#3a2a1a; border-radius:4px; }
+.yin-seg { width:48px; height:8px; background:#3a2a1a; border-radius:4px; }
+.change-mark { margin-left:6px; font-size:12px; color:#c0392b; font-weight:bold; }
+
+.hex-result { text-align:center; margin-top:8px; }
+.hex-name { font-size:22px; font-weight:700; color:#3a1a0a; letter-spacing:2px; }
+.hex-judgment { font-size:13px; color:#6a5a4a; margin:4px 0 10px; font-style:italic; }
+.hex-changing { font-size:12px; color:#c0392b; margin:4px 0; }
+.hex-detail { font-size:12px; color:#5a4a3a; text-align:left; line-height:1.7; background:rgba(200,180,150,0.15); padding:10px 14px; border-radius:8px; max-height:160px; overflow-y:auto; margin-bottom:6px; }
+
+.explain-area { margin-top:10px; padding:10px; background:rgba(139,115,85,0.06); border-radius:10px; border:1px solid #e0d5c0; }
+.explain-title { font-size:13px; font-weight:700; color:#5a3e2b; margin-bottom:6px; }
+.explain-auto-btn { display:block; text-align:center; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; color:#fff; border:none; width:100%; background:linear-gradient(135deg,#d4770a,#e8913a); letter-spacing:1px; }
+.explain-auto-hint { font-size:10px; color:#9a8b7a; margin:2px 0 8px; text-align:center; }
+.explain-divider { text-align:center; margin:8px 0; border-top:1px dashed #d4c5a0; }
+.explain-divider text { display:inline-block; position:relative; top:-10px; background:#fdf8f0; padding:0 10px; font-size:11px; color:#b8a888; }
+.explain-text { width:100%; padding:10px; border:1px solid #d4c5a0; border-radius:8px; font-size:12px; background:#fffdf7; box-sizing:border-box; }
+.explain-hint { font-size:11px; color:#9a8b7a; margin:8px 0; text-align:center; }
+.explain-links { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:6px; }
+.link-btn { padding:8px 14px; border-radius:18px; font-size:12px; font-weight:600; color:#fff; border:none; }
+.link-btn.deepseek { background:#4f46e5; }
+.link-btn.kimi { background:#10b981; }
+.link-btn.tongyi { background:#f59e0b; }
+.link-btn.doubao { background:#3b82f6; }
+.btn-copy { width:100%; margin-top:6px; padding:10px 22px; border-radius:20px; font-size:14px; color:#fff; border:none; background:#6366f1; }
+
+.div-btn-row { display:flex; gap:10px; justify-content:center; margin-top:14px; }
+.div-disclaimer { margin-top:14px; padding-top:10px; border-top:1px solid #d0c5a0; font-size:13px; color:#8b7355; letter-spacing:2px; }
+
+/* 通用按钮 */
+.btn-primary { background:#8b5e3c; color:#fff; border:none; padding:9px 22px; border-radius:20px; font-size:14px; }
+.btn-secondary { background:#e8dcc8; color:#5a3e2b; border:none; padding:9px 22px; border-radius:20px; font-size:14px; }
+
+/* ========== 定位 ========== */
+.location-row { text-align:center; margin-bottom:8px; }
+.location-text { font-size:14px; color:#666; border-bottom:1px dashed #aaa; padding:3px 8px; font-weight:600; }
+
+/* ========== 城市弹窗 ========== */
+.city-panel {
+  background:linear-gradient(180deg,#fdf8f0,#f8f0e0,#f0e8d0);
+  border-radius:16px; padding:24px;
+  max-width:380px; width:90%;
+  border:2px solid #d4c5a0;
+}
+.city-search-row { display:flex; gap:6px; margin:10px 0; }
+.city-search-input { flex:1; padding:8px 12px; border:2px solid #d4c5a0; border-radius:8px; font-size:14px; background:#fffdf7; }
+.city-results { max-height:200px; margin-bottom:6px; }
+.city-item { padding:10px 12px; font-size:13px; border-bottom:1px solid #e8dcc8; color:#333; }
