@@ -287,10 +287,6 @@
 
 .explain-area { margin-top:10px; padding:10px; background:rgba(139,115,85,0.06); border-radius:10px; border:1px solid #e0d5c0; }
 .explain-title { font-size:13px; font-weight:700; color:#5a3e2b; margin-bottom:6px; }
-.explain-auto-btn { display:block; text-align:center; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; color:#fff; border:none; width:100%; background:linear-gradient(135deg,#d4770a,#e8913a); letter-spacing:1px; }
-.explain-auto-hint { font-size:10px; color:#9a8b7a; margin:2px 0 8px; text-align:center; }
-.explain-divider { text-align:center; margin:8px 0; border-top:1px dashed #d4c5a0; }
-.explain-divider text { display:inline-block; position:relative; top:-10px; background:#fdf8f0; padding:0 10px; font-size:11px; color:#b8a888; }
 .explain-text { width:100%; padding:10px; border:1px solid #d4c5a0; border-radius:8px; font-size:12px; background:#fffdf7; box-sizing:border-box; }
 .explain-hint { font-size:11px; color:#9a8b7a; margin:8px 0; text-align:center; }
 .explain-links { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:6px; }

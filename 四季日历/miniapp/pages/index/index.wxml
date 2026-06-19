@@ -178,17 +178,14 @@
         <!-- AI 详解 -->
         <view wx:if="{{showExplain}}" class="explain-area">
           <view class="explain-title">📖 AI 详解</view>
-          <button class="explain-auto-btn" bindtap="onClaudeLink">⚡ Claude 一键直达（无需粘贴，中国大陆不可用）</button>
-          <view class="explain-auto-hint">点击即自动填入，免费免粘贴</view>
-          <view class="explain-divider"><text>其他 AI 服务</text></view>
           <textarea class="explain-text" value="{{explainPrompt}}" readonly></textarea>
           <button class="btn-copy" bindtap="copyExplainText">📋 一键复制文案</button>
           <view class="explain-hint">{{explainHint}}</view>
           <view class="explain-links">
-            <button class="link-btn deepseek" bindtap="openService" data-url="https://chat.deepseek.com/">DeepSeek</button>
-            <button class="link-btn kimi" bindtap="openService" data-url="https://kimi.moonshot.cn/">Kimi</button>
-            <button class="link-btn tongyi" bindtap="openService" data-url="https://tongyi.aliyun.com/qianwen/">通义千问</button>
-            <button class="link-btn doubao" bindtap="openService" data-url="https://www.doubao.com/">豆包</button>
+            <button class="link-btn deepseek" bindtap="openService" data-url="https://chat.deepseek.com/" data-name="DeepSeek">DeepSeek</button>
+            <button class="link-btn kimi" bindtap="openService" data-url="https://kimi.moonshot.cn/" data-name="Kimi">Kimi</button>
+            <button class="link-btn tongyi" bindtap="openService" data-url="https://tongyi.aliyun.com/qianwen/" data-name="通义千问">通义千问</button>
+            <button class="link-btn doubao" bindtap="openService" data-url="https://www.doubao.com/" data-name="豆包">豆包</button>
           </view>
         </view>
       </view>

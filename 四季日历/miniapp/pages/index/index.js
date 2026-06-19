@@ -373,15 +373,18 @@ Page({
     }});
   },
 
-  onClaudeLink() {
-    wx.setClipboardData({ data: this.data.explainPrompt,
-      success: () => wx.showToast({ title: '已复制，请在浏览器打开 claude.ai', icon: 'none' })
-    });
-  },
-
   openService(e) {
-    wx.setClipboardData({ data: e.currentTarget.dataset.url,
-      success: () => wx.showToast({ title: '链接已复制，请在浏览器中打开', icon: 'none' })
+    const name = e.currentTarget.dataset.name || '';
+    wx.setClipboardData({
+      data: this.data.explainPrompt,
+      success: () => {
+        wx.showModal({
+          title: '已复制解读文案',
+          content: '请打开手机浏览器访问 ' + name + '，粘贴发送即可',
+          showCancel: false,
+          confirmText: '知道了',
+        });
+      },
     });
   },
 
