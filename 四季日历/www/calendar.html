@@ -992,60 +992,6 @@
             margin-bottom: 16px;
         }
 
-        /* 心有所想 输入区 */
-        .div-wish-area {
-            margin: 0 auto 16px;
-            max-width: 300px;
-        }
-
-        .div-wish-label {
-            font-size: 16px;
-            color: #5a3e2b;
-            font-weight: 600;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-        }
-
-        .div-wish-input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 2px solid #d4c5a0;
-            border-radius: 10px;
-            font-size: 15px;
-            color: #3a2a1a;
-            background: #fffdf7;
-            outline: none;
-            text-align: center;
-            letter-spacing: 1px;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-        }
-
-        .div-wish-input:focus {
-            border-color: #8b5e3c;
-        }
-
-        .div-wish-input::placeholder {
-            color: #c8b898;
-            letter-spacing: 1px;
-        }
-
-        .div-wish-area .div-btn {
-            margin-top: 12px;
-            width: 100%;
-        }
-
-        /* 仅供娱乐声明 */
-        .div-disclaimer {
-            margin-top: 14px;
-            padding-top: 10px;
-            border-top: 1px solid #d0c5a0;
-            font-size: 13px;
-            color: #8b7355;
-            letter-spacing: 2px;
-            font-weight: 500;
-        }
-
         /* 六条爻线区域 */
         .yao-lines-area {
             margin: 0 auto 14px;
@@ -1163,120 +1109,6 @@
             border-radius: 8px;
             max-height: 160px;
             overflow-y: auto;
-        }
-
-        /* AI 详解区 */
-        .div-explain-area {
-            margin-top: 14px;
-            padding: 12px;
-            background: rgba(139, 115, 85, 0.06);
-            border-radius: 10px;
-            border: 1px solid #e0d5c0;
-        }
-
-        .div-explain-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #5a3e2b;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-
-        .div-explain-text {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d4c5a0;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #3a2a1a;
-            background: #fffdf7;
-            resize: vertical;
-            box-sizing: border-box;
-            font-family: inherit;
-            line-height: 1.6;
-        }
-
-        .div-explain-hint {
-            font-size: 11px;
-            color: #9a8b7a;
-            margin: 8px 0;
-            text-align: center;
-        }
-
-        .div-explain-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            margin-top: 6px;
-        }
-
-        .div-explain-link {
-            display: inline-block;
-            padding: 8px 14px;
-            border-radius: 18px;
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-            color: #fff;
-        }
-
-        .div-explain-link.deepseek {
-            background: #4f46e5;
-        }
-        .div-explain-link.deepseek:hover {
-            background: #3730a3;
-        }
-
-        .div-explain-link.kimi {
-            background: #10b981;
-        }
-        .div-explain-link.kimi:hover {
-            background: #059669;
-        }
-
-        .div-explain-link.tongyi {
-            background: #f59e0b;
-        }
-        .div-explain-link.tongyi:hover {
-            background: #d97706;
-        }
-
-        .div-explain-link.doubao {
-            background: #3b82f6;
-        }
-        .div-explain-link.doubao:hover {
-            background: #2563eb;
-        }
-
-        /* Claude 一键直达按钮 */
-        .div-explain-auto-link {
-            display: block;
-            text-align: center;
-            padding: 13px 20px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-            letter-spacing: 2px;
-            transition: all 0.25s;
-            color: #fff;
-            background: linear-gradient(135deg, #d4770a, #e8913a);
-            box-shadow: 0 4px 15px rgba(212,119,10,0.4);
-            animation: autoLinkPulse 2.5s ease-in-out infinite;
-        }
-
-        .div-explain-auto-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212,119,10,0.55);
-            background: linear-gradient(135deg, #b8650a, #d4770a);
-        }
-
-        @keyframes autoLinkPulse {
-            0%, 100% { box-shadow: 0 4px 15px rgba(212,119,10,0.4); }
-            50% { box-shadow: 0 4px 25px rgba(212,119,10,0.7); }
         }
 
         /* 卦桶容器 */
@@ -1538,15 +1370,6 @@
         .div-btn.primary:hover {
             background: #6b3e1c;
         }
-        #divExplainBtn {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: #fff;
-        }
-        #divExplainBtn:hover {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99,102,241,0.35);
-        }
         .div-btn.secondary {
             background: #e8dcc8;
             color: #5a3e2b;
@@ -1759,16 +1582,6 @@
         <div class="divination-panel" id="divinationPanel">
             <h3>🔮 六爻卜卦</h3>
             <div class="div-subtitle" id="divSubtitle">心中默念所求之事，点击卦桶摇卦</div>
-            <!-- 心有所想 输入区 -->
-            <div class="div-wish-area" id="divWishArea">
-                <div class="div-wish-label">心有所想：</div>
-                <input type="text" class="div-wish-input" id="divWishInput" placeholder="默念所求之事…" maxlength="50">
-                <button class="div-btn primary" id="divWishConfirm">🙏 开始摇卦</button>
-                <button class="div-btn secondary" id="divWishClose" style="margin-top:8px;width:100%;">关 闭</button>
-                <div class="div-disclaimer">⚠ 此项目仅供娱乐</div>
-            </div>
-            <!-- 摇卦区域（初始隐藏） -->
-            <div id="divShakeArea" style="display:none;">
             <!-- 卦桶 -->
             <div class="div-bucket-area" id="divBucketArea">
                 <div class="div-sticks" id="divSticks"></div>
@@ -1784,35 +1597,11 @@
             <div class="yao-lines-area" id="yaoLinesArea"></div>
             <!-- 结果区（初始隐藏） -->
             <div class="hexagram-result" id="hexagramResult" style="display:none;"></div>
-            <!-- AI 详解区（初始隐藏） -->
-            <div class="div-explain-area" id="divExplainArea" style="display:none;">
-                <div class="div-explain-title">📖 AI 详解</div>
-                <!-- 一键直达（无需粘贴） -->
-                <a id="divClaudeLink" href="#" target="_blank" rel="noopener" class="div-explain-auto-link">⚡ Claude 一键直达解读（无需粘贴）</a>
-                <div class="div-explain-hint" style="font-size:10px;color:#9a8b7a;margin:4px 0 12px;">点击即自动填入，免费免粘贴</div>
-                <!-- 分割线 -->
-                <div style="border-top:1px dashed #d4c5a0;margin:8px 0;position:relative;">
-                    <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#fdf8f0;padding:0 10px;font-size:11px;color:#b8a888;">其他 AI 服务</span>
-                </div>
-                <!-- 复制 + 手动粘贴 -->
-                <textarea class="div-explain-text" id="divExplainText" rows="8" readonly></textarea>
-                <button class="div-btn" id="divCopyBtn" style="background:#6366f1;color:#fff;width:100%;margin-top:6px;">📋 一键复制文案</button>
-                <div class="div-explain-hint" id="divExplainHint">复制后选择下方 AI，粘贴（Ctrl+V）发送</div>
-                <div class="div-explain-links">
-                    <a href="https://chat.deepseek.com/" target="_blank" rel="noopener" class="div-explain-link deepseek">DeepSeek</a>
-                    <a href="https://kimi.moonshot.cn/" target="_blank" rel="noopener" class="div-explain-link kimi">Kimi</a>
-                    <a href="https://tongyi.aliyun.com/qianwen/" target="_blank" rel="noopener" class="div-explain-link tongyi">通义千问</a>
-                    <a href="https://www.doubao.com/" target="_blank" rel="noopener" class="div-explain-link doubao">豆包</a>
-                </div>
-            </div>
             <!-- 按钮 -->
             <div class="div-btn-row">
                 <button class="div-btn secondary" id="divCloseBtn">关 闭</button>
-                <button class="div-btn primary" id="divExplainBtn" style="display:none;">📖 AI 详解</button>
                 <button class="div-btn primary" id="divRetryBtn" style="display:none;">🔄 重新卜卦</button>
             </div>
-            <div class="div-disclaimer">⚠ 此项目仅供娱乐</div>
-            </div><!-- /divShakeArea -->
         </div>
     </div>
 
@@ -4188,18 +3977,8 @@
 
             document.getElementById('hexagramResult').innerHTML = html;
             document.getElementById('hexagramResult').style.display = '';
-            document.getElementById('divExplainBtn').style.display = '';
             document.getElementById('divRetryBtn').style.display = '';
             document.getElementById('divClickHint').style.display = 'none';
-
-            // 保存结果数据供 AI 详解使用
-            divinationState.result = {
-                hex: hex,
-                changedHex: changedHex,
-                hasChanging: hasChanging,
-                changingLines: changingLines,
-                posNames: posNames,
-            };
         }
 
         /**
@@ -4268,24 +4047,15 @@
                 active: true,
                 lines: new Array(6).fill(0),
                 currentClick: 0,
-                wish: '',
             };
             document.getElementById('divinationOverlay').style.display = 'flex';
-            // 显示心有所想输入区
-            document.getElementById('divWishArea').style.display = '';
-            document.getElementById('divWishInput').value = '';
-            document.getElementById('divShakeArea').style.display = 'none';
             document.getElementById('hexagramResult').style.display = 'none';
-            document.getElementById('divExplainArea').style.display = 'none';
-            document.getElementById('divExplainBtn').style.display = 'none';
             document.getElementById('divRetryBtn').style.display = 'none';
             document.getElementById('divBucketArea').classList.remove('busy');
-            document.getElementById('divSubtitle').textContent = '心有所想，默念之后再摇卦';
+            document.getElementById('divSubtitle').textContent = '心中默念所求之事，点击卦桶摇卦';
             renderBucketSticks();
             renderYaoLines();
             updateClickHint();
-            // 自动聚焦输入框
-            setTimeout(() => document.getElementById('divWishInput').focus(), 400);
         }
 
         /**
@@ -4302,131 +4072,13 @@
         function retryDivination() {
             divinationState.lines = new Array(6).fill(0);
             divinationState.currentClick = 0;
-            // 回到心有所想输入
-            document.getElementById('divWishArea').style.display = '';
-            document.getElementById('divWishInput').value = '';
-            document.getElementById('divShakeArea').style.display = 'none';
             document.getElementById('hexagramResult').style.display = 'none';
-            document.getElementById('divExplainArea').style.display = 'none';
-            document.getElementById('divExplainBtn').style.display = 'none';
             document.getElementById('divRetryBtn').style.display = 'none';
             document.getElementById('divBucketArea').classList.remove('busy');
-            document.getElementById('divSubtitle').textContent = '心有所想，默念之后再摇卦';
+            document.getElementById('divSubtitle').textContent = '心中默念所求之事，点击卦桶摇卦';
             renderBucketSticks();
             renderYaoLines();
             updateClickHint();
-            setTimeout(() => document.getElementById('divWishInput').focus(), 300);
-        }
-
-        /**
-         * 确认心有所想，进入摇卦环节
-         */
-        function startShaking() {
-            const wishInput = document.getElementById('divWishInput');
-            const wish = wishInput.value.trim();
-            divinationState.wish = wish;
-            // 隐藏输入区，显示摇卦区
-            document.getElementById('divWishArea').style.display = 'none';
-            document.getElementById('divShakeArea').style.display = '';
-            document.getElementById('divSubtitle').textContent = wish
-                ? '「' + wish + '」— 点击卦桶摇卦'
-                : '心中默念所求之事，点击卦桶摇卦';
-            renderBucketSticks();
-            renderYaoLines();
-            updateClickHint();
-        }
-
-        /**
-         * AI 详解：整理心愿+卦象，复制到剪贴板并打开免费AI网页
-         */
-        function openDetailedInterpretation() {
-            const wish = divinationState.wish || '（未填写）';
-            const result = divinationState.result;
-            if (!result) return;
-
-            const hex = result.hex;
-            const changedHex = result.changedHex;
-            const hasChanging = result.hasChanging;
-            const changingLines = result.changingLines;
-            const posNames = result.posNames;
-
-            // 构建详细解读提示词
-            let prompt = '请帮我详细解读以下六爻卦象：\n\n';
-            prompt += '🙏 心有所想：' + wish + '\n\n';
-            prompt += '📖 本卦：第' + hex.num + '卦 ' + hex.name + '（上' + hex.upper + '下' + hex.lower + '）\n';
-            prompt += '彖曰：' + hex.judgment + '\n';
-            prompt += '卦辞：' + hex.interp + '\n';
-
-            if (hasChanging && changingLines.length > 0) {
-                const changingNames = changingLines.map(i => posNames[i] + '爻').join('、');
-                prompt += '\n🔄 变爻：' + changingNames + '\n';
-                if (changedHex && changedHex !== hex) {
-                    prompt += '之卦：第' + changedHex.num + '卦 ' + changedHex.name + '（上' + changedHex.upper + '下' + changedHex.lower + '）\n';
-                    prompt += '之卦卦辞：' + changedHex.interp + '\n';
-                }
-            }
-
-            prompt += '\n请从以下角度解读：\n';
-            prompt += '1. 本卦的核心含义\n';
-            prompt += '2. 结合我所求之事，分析吉凶趋势\n';
-            if (hasChanging) {
-                prompt += '3. 变爻的指示意义和之卦的发展方向\n';
-                prompt += '4. 综合建议\n';
-            } else {
-                prompt += '3. 针对性的行动建议\n';
-            }
-
-            // 填入文本框并显示详解区
-            document.getElementById('divExplainText').value = prompt;
-            document.getElementById('divExplainArea').style.display = '';
-            document.getElementById('divExplainHint').textContent = '👆 点击「一键复制」 → 选择 AI → 粘贴（Ctrl+V）发送';
-
-            // 生成 Claude 一键直达链接（URL 参数自动填入）
-            const claudeUrl = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
-            const claudeLink = document.getElementById('divClaudeLink');
-            claudeLink.href = claudeUrl;
-
-            document.getElementById('divSubtitle').textContent = '📖 点击「Claude一键直达」无需粘贴，或复制到其他AI';
-        }
-
-        /**
-         * 兼容多种环境的复制方法（支持 file:// 协议）
-         */
-        function copyExplainText() {
-            const textarea = document.getElementById('divExplainText');
-            const hint = document.getElementById('divExplainHint');
-            textarea.select();
-            try {
-                // 优先尝试 Clipboard API
-                navigator.clipboard.writeText(textarea.value).then(() => {
-                    hint.textContent = '✅ 已复制！选择下方任一 AI 服务，粘贴（Ctrl+V）即可';
-                    hint.style.color = '#27ae60';
-                    setTimeout(() => {
-                        hint.textContent = '👆 复制成功，点击 AI 服务 → 粘贴发送';
-                        hint.style.color = '#9a8b7a';
-                    }, 3000);
-                }).catch(() => {
-                    fallbackCopy();
-                });
-            } catch (e) {
-                fallbackCopy();
-            }
-
-            function fallbackCopy() {
-                // 降级：使用 document.execCommand（兼容 file:// 和旧浏览器）
-                try {
-                    document.execCommand('copy');
-                    hint.textContent = '✅ 已复制！选择 AI 服务，粘贴（Ctrl+V）即可';
-                    hint.style.color = '#27ae60';
-                    setTimeout(() => {
-                        hint.textContent = '👆 复制成功，点击 AI 服务 → 粘贴发送';
-                        hint.style.color = '#9a8b7a';
-                    }, 3000);
-                } catch (e2) {
-                    hint.textContent = '⚠ 自动复制失败，请手动选中文字后 Ctrl+C 复制';
-                    hint.style.color = '#c0392b';
-                }
-            }
         }
 
         // ============================================================
@@ -4492,16 +4144,6 @@
         // ---- 六爻卜卦事件 ----
         // 打开运势面板
         document.getElementById('fortuneBtn').addEventListener('click', openDivination);
-        // 心有所想 → 确认进入摇卦
-        document.getElementById('divWishConfirm').addEventListener('click', startShaking);
-        document.getElementById('divWishInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') startShaking();
-        });
-        // 心有所想 → 关闭按钮
-        document.getElementById('divWishClose').addEventListener('click', closeDivination);
-        // AI 详解
-        document.getElementById('divExplainBtn').addEventListener('click', openDetailedInterpretation);
-        document.getElementById('divCopyBtn').addEventListener('click', copyExplainText);
         // 点击卦桶 → 摇卦生成一爻
         document.getElementById('divBucket').addEventListener('click', function(e) {
             e.stopPropagation();
@@ -4552,7 +4194,7 @@
         console.log('🎆 特色节日自动切换主题动画 + 音效（春节🧨、中秋🌕、七夕💫...）');
         console.log('🌸 春季：3-5月 | ☀️ 夏季：6-8月 | 🍂 秋季：9-11月 | ❄️ 冬季：12-2月');
         console.log('📍 气候参考：中国华北平原');
-        console.log('🔮 点击「今日运势」→ 输入心有所想 → 摇卦6次 → 得卦象解读~');
+        console.log('🔮 点击「今日运势」按钮，六爻卜卦，点击6次得卦象解读~');
         console.log('💡 用 ← → 方向键切换月份，点击日期查看黄历，按 Esc 关闭弹窗~');
     </script>
 </body>
